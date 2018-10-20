@@ -1,0 +1,5 @@
+.stack-work/
+movie-recon.cabal
+*~
+.idea/*
+*.iml
