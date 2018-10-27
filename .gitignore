@@ -1,5 +1,9 @@
-.stack-work/
-movie-recon.cabal
+*.iml
 *~
 .idea/*
-*.iml
+.stack-work/
+cabal.config
+keys
+movie-recon.cabal
+out/*
+
