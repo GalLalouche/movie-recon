@@ -27,11 +27,12 @@ dependencies:
 - transformers
 - HTTP
 - interpolate
-- json
 - bytestring
 - utf8-string
 - aeson
 - vector
+- sqlite-simple
+- directory
 
 library:
   source-dirs: src

@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, RankNTypes, InstanceSigs #-}
+
 module Common.Operators where
 
 import Control.Monad ((>=>), (<=<))
@@ -7,7 +9,7 @@ x |> f = f x
 infixl 4 |>
 
 (|>>) :: a -> (b -> a -> c) -> b -> c
--- (|>>) = flip flip nah...
+-- (|>>) = flip flip, but nah...
 (a |>> f) b = f b a
 infixl 4 |>>
 
@@ -62,3 +64,6 @@ infixr 1 >==> -- same priority as >=>
 (<==<) :: Monad m => (c -> m d) -> (a -> b -> m c) -> a -> b -> m d
 (<==<) = flip (>==>)
 infixr 1 <==< -- same priority as >=>
+
+flip2 :: (a -> b -> c -> d) -> (b -> c -> a -> d)
+flip2 f b c a = f a b c

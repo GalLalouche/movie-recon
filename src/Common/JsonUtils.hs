@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-{-| A bunch of patently unsafe functions, since type-safe JSON is the way madness. |-}
+{-| A bunch of patently unsafe functions, since type-safe JSON is the way to madness. |-}
 module Common.JsonUtils where
 
 import Data.Aeson (Value, Array, Object, (.:), withObject, withArray, decode, fromJSON, Result(..))
