@@ -25,7 +25,6 @@ test_database = [
     testCase "read after write" $ do
       let id = MovieId "foobar"
       res <- withDbPath $ do
-        clear
         init
         write $ Movie id "moobar"
         read id

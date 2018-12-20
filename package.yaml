@@ -31,8 +31,11 @@ dependencies:
 - utf8-string
 - aeson
 - vector
-- sqlite-simple
 - directory
+- persistent
+- persistent-template
+- persistent-sqlite
+- esqueleto
 
 library:
   source-dirs: src
