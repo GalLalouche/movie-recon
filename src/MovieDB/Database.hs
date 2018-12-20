@@ -10,6 +10,7 @@ module MovieDB.Database(
 ) where
 
 import Prelude hiding (init, read)
+
 import Common.IO (removeIfExists, createFileIfNotExists)
 import Common.Operators
 import Common.Foldables (headOpt)
@@ -18,13 +19,13 @@ import Common.Flippers (lotate2, lotate3)
 import MovieDB.Types (Movie(..), MovieId(..))
 
 import Data.Text (Text, unpack)
-import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Reader (ReaderT, ask)
 import Control.Monad.IO.Class (liftIO)
-import Control.Applicative
 import Database.SQLite.Simple (Connection, Query, open, withConnection, execute, execute_, query)
 import Database.SQLite.Simple.ToRow
 import Database.SQLite.Simple.ToField
 import Database.SQLite.Simple.FromRow
+
 
 newtype DbPath = DbPath { path :: Text }
 type DbCall a = ReaderT DbPath IO a

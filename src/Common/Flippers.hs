@@ -80,6 +80,7 @@ module Common.Flippers
     flip9,
 ) where
 
+
 -- | Does nothing, 'id'
 rotate1 :: (a -> b) -> (a -> b)
 rotate1 = id

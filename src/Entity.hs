@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Entity where
-import Data.Text
+import Data.Text (Text)
 
 newtype ReconId = ReconId { unreconId :: Text }
 newtype EntityName = EntityName { name :: Text }

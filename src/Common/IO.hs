@@ -3,7 +3,8 @@ module Common.IO where
 import Prelude hiding (catch)
 import System.Directory (removeFile, doesFileExist)
 import Control.Exception (catch, throwIO)
-import System.IO.Error hiding (catch)
+import System.IO.Error (isDoesNotExistError)
+
 
 removeIfExists :: FilePath -> IO ()
 removeIfExists fileName = removeFile fileName `catch` handleExists

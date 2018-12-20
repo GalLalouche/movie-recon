@@ -1,8 +1,8 @@
 module Common.Foldables where
 
-import Common.Operators
-import Data.Foldable
+import Data.Foldable (null, toList)
 import Data.Maybe (fromJust)
+
 
 notNull :: Foldable f => f a -> Bool
 notNull = not . null

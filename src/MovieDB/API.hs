@@ -7,8 +7,8 @@ import Data.Text (Text)
 import Common.Operators
 import Control.Monad ((>=>))
 import Control.Monad.Trans.Reader
-import Control.Monad.IO.Class
-import Network.HTTP
+import Control.Monad.IO.Class (liftIO)
+import Network.HTTP (simpleHTTP, getRequest)
 import Data.String.Interpolate
 
 newtype PersonId = PersonId { id :: Text }

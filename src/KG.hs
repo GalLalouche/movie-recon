@@ -1,8 +1,8 @@
 module KG where
 
-import Control.Monad.Reader
-import Recon
-import Data.Text
+import Control.Monad.Reader (Reader)
+import Recon (Reconciler)
+import Data.Text (Text, pack, strip)
 
 readApiKey :: IO ApiKey
 readApiKey = (ApiKey . strip . pack) <$> readFile "keys/kg.txt"

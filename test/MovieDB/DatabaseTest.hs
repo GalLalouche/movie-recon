@@ -4,13 +4,12 @@ module MovieDB.DatabaseTest where
 
 import Prelude hiding (read, init)
 
-import Common.Unsafe
 import Data.Text (Text)
 import System.Directory (removeFile)
-import MovieDB.Database
-import MovieDB.Types
+import MovieDB.Database (DbCall, DbPath(..), clear, init, write, read)
+import MovieDB.Types (Movie(..), MovieId(..))
 
-import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Reader (runReaderT)
 
 import Test.Tasty
 import Test.Tasty.HUnit

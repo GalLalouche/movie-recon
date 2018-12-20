@@ -1,12 +1,14 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DuplicateRecordFields, ScopedTypeVariables, QuasiQuotes #-}
 
 module MovieDB.Internal where
 
+import Common.Operators
+import Common.Foldables (headUnsafe)
+
+import Common.JsonUtils (asObject, array, object, objects, int, fromSuccess)
+
 import MovieDB.Types
 
-import Entity hiding (Movie)
 import Data.Text (Text, pack)
 import Control.Monad ((>=>))
 import Control.Monad.Trans.Reader (ReaderT, ask)
@@ -18,11 +20,6 @@ import qualified Data.Aeson as J
 import qualified Data.Aeson.Types as J
 import Data.String.Interpolate (i)
 import Data.Maybe (fromJust)
-
-import Common.Operators
-import Common.Foldables (headUnsafe)
-
-import Common.JsonUtils (asObject, array, object, objects, int, fromSuccess)
 
 
 newtype ApiKey = ApiKey { key :: Text }

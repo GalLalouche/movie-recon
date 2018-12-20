@@ -3,7 +3,7 @@
 module IMDB where
 
 import Entity hiding (Movie)
-import Data.Text
+import Data.Text (Text)
 import Control.Monad ((>=>))
 
 newtype PersonId = PersonId { id :: String }
