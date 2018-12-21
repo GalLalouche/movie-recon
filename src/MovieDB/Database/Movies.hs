@@ -14,10 +14,11 @@ import Prelude hiding (init, read)
 
 import Common.Operators
 
+import MovieDB.Database.Common (DbPath(..), DbCall)
 import MovieDB.Types (Movie(..), MovieId(..))
 
 import Data.Text (Text)
-import Control.Monad.Trans.Reader (ReaderT, ask)
+import Control.Monad.Trans.Reader (ask)
 import Control.Monad (void)
 
 import Database.Persist.Sql (deleteWhere, entityVal, getBy, insert, Filter)
@@ -36,9 +37,6 @@ fromMovie (Movie (MovieId id) name) = MovieRow id name
 toMovie :: MovieRow -> Movie
 toMovie (MovieRow id name) = Movie (MovieId id) name
 
-newtype DbPath = DbPath { path :: Text }
-type DbCall a = ReaderT DbPath IO a
-
 withMigration action = do
   dbPath <- path <$> ask
   runSqlite dbPath (runMigrationSilent migrateTables >> action)
@@ -51,7 +49,7 @@ clear :: DbCall()
 clear = withMigration $ deleteWhere ([] :: [Filter MovieRow])
 
 write :: Movie -> DbCall ()
-write (Movie (MovieId id) name) = void <$> withMigration $ insert $ MovieRow id name
+write = void <$> (withMigration . insert . fromMovie)
 
 read :: MovieId -> DbCall (Maybe Movie)
 read (MovieId id) = withMigration $ do

@@ -2,7 +2,8 @@
 
 module MovieDB.Database.MoviesTest where
 
-import MovieDB.Database.Movies (DbCall, DbPath(..), clear, init, write, read)
+import MovieDB.Database.Movies (clear, init, write, read)
+import MovieDB.Database.Common (DbCall, DbPath(..))
 
 import Prelude hiding (read, init)
 
