@@ -38,6 +38,7 @@ dependencies:
 - esqueleto
 - exceptions
 - temporary
+- lens
 
 library:
   source-dirs: src

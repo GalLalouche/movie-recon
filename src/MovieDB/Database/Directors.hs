@@ -1,5 +1,7 @@
 {-# LANGUAGE TypeFamilies, OverloadedStrings, GADTs, FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes, TemplateHaskell, MultiParamTypeClasses, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FunctionalDependencies #-}
+
 
 module MovieDB.Database.Directors(
   init,
@@ -10,7 +12,7 @@ module MovieDB.Database.Directors(
   DbCall( ..),
 ) where
 
-import Prelude hiding (init, read)
+import Prelude hiding (init, read, id)
 
 import Common.Operators
 
@@ -20,6 +22,7 @@ import MovieDB.Types (Director(..), DirectorId(..), PersonId(..))
 import Data.Text (Text)
 import Control.Monad.Trans.Reader (ask)
 import Control.Monad (void)
+import Control.Lens (makeLensesWith, classUnderscoreNoPrefixFields, Iso', iso, from, view, (^.))
 
 import Database.Persist.Sql (deleteWhere, entityVal, getBy, insert, Filter)
 import Database.Persist.Sqlite (runSqlite, runMigrationSilent)
@@ -32,14 +35,16 @@ DirectorRow
   name               Text
 |]
 
---TODO lenses
-deepId :: Director -> Text
-deepId (Director (DirectorId (PersonId id)) _) = id
+makeLensesWith classUnderscoreNoPrefixFields ''PersonId
+makeLensesWith classUnderscoreNoPrefixFields ''DirectorId
+makeLensesWith classUnderscoreNoPrefixFields ''Director
 
-fromDirector :: Director -> DirectorRow
-fromDirector (Director (DirectorId (PersonId id)) name) = DirectorRow id name
-toDirector :: DirectorRow -> Director
-toDirector (DirectorRow id name) = Director (DirectorId (PersonId id)) name
+rowIso :: Iso' Director DirectorRow
+rowIso = iso fromDirector toDirector where
+  fromDirector :: Director -> DirectorRow
+  fromDirector director = DirectorRow (director ^. id ^. id ^. id) (director ^. name)
+  toDirector :: DirectorRow -> Director
+  toDirector (DirectorRow id name) = Director (DirectorId (PersonId id)) name
 
 withMigration action = do
   dbPath <- path <$> ask
@@ -53,9 +58,9 @@ clear :: DbCall()
 clear = withMigration $ deleteWhere ([] :: [Filter DirectorRow])
 
 write :: Director -> DbCall ()
-write = void <$> (withMigration . insert . fromDirector)
+write = void <$> (withMigration . insert . view rowIso)
 
 read :: DirectorId -> DbCall (Maybe Director)
-read (DirectorId (PersonId id)) = withMigration $ do
-  result <- getBy $ UniqueDirectorId id
-  return $ toDirector . entityVal <$> result
+read directorId = withMigration $ do
+  result <- getBy $ UniqueDirectorId $ directorId ^. id ^. id
+  return $ view (from rowIso) . entityVal <$> result
