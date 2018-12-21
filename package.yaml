@@ -36,6 +36,8 @@ dependencies:
 - persistent-template
 - persistent-sqlite
 - esqueleto
+- exceptions
+- temporary
 
 library:
   source-dirs: src
