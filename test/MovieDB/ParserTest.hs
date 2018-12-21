@@ -20,6 +20,5 @@ test_MovieDBInternal = testGroup "parseJson" [
     testCase "parseSearchPerson" $ do
       json <- readFile "test/resources/foo.json"
       let res = parseSearchPerson $ right $ J.eitherDecode json :: PersonId
-      res @=? PersonId 36592
+      res @=? PersonId "36592"
   ]
-
