@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
-module MovieDB.DatabaseTest where
+module MovieDB.Database.MoviesTest where
+
+import MovieDB.Database.Movies (DbCall, DbPath(..), clear, init, write, read)
 
 import Prelude hiding (read, init)
 
 import Data.Text (Text)
 import System.Directory (removeFile)
-import MovieDB.Database (DbCall, DbPath(..), clear, init, write, read)
 import MovieDB.Types (Movie(..), MovieId(..))
 
 import Control.Monad.Trans.Reader (runReaderT)

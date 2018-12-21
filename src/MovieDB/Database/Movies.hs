@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, OverloadedStrings, GADTs, FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes, TemplateHaskell, MultiParamTypeClasses, GeneralizedNewtypeDeriving #-}
 
-module MovieDB.Database(
+module MovieDB.Database.Movies(
   init,
   clear,
   write,
