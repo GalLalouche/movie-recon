@@ -6,8 +6,6 @@ module MovieDB.Database.Movies(
   clear,
   write,
   read,
-  DbPath(..),
-  DbCall( ..),
 ) where
 
 import Prelude hiding (init, read)

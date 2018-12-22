@@ -8,8 +8,6 @@ module MovieDB.Database.Directors(
   clear,
   write,
   read,
-  DbPath(..),
-  DbCall( ..),
 ) where
 
 import Prelude hiding (init, read, id)
