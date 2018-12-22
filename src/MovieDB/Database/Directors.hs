@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings, GADTs, FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies, OverloadedStrings, GADTs, FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE QuasiQuotes, TemplateHaskell, MultiParamTypeClasses, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
@@ -6,32 +6,36 @@
 module MovieDB.Database.Directors(
   init,
   clear,
-  write,
-  read,
+  insertOrVerify,
+  DirectorRowId,
 ) where
 
-import Prelude hiding (init, read, id)
+import Prelude hiding (init, id)
 
 import Common.Operators
 
-import MovieDB.Database.Common (DbPath(..), DbCall)
 import MovieDB.Types (Director(..), DirectorId(..), PersonId(..))
+import MovieDB.Database.Common (DbPath(..), DbCall(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify)
 
 import Data.Text (Text)
+import Control.Arrow ((&&&))
 import Control.Monad.Trans.Reader (ask)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad (void)
+import Data.Maybe (fromJust)
 import Control.Lens (makeLensesWith, classUnderscoreNoPrefixFields, Iso', iso, from, view, (^.))
 
-import Database.Persist.Sql (deleteWhere, entityVal, getBy, insert, Filter)
+import Database.Persist.Sql (deleteWhere, entityVal, entityKey, get, getBy, insert, Filter)
 import Database.Persist.Sqlite (runSqlite, runMigrationSilent)
 import Database.Persist.TH (mkPersist, mkMigrate, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 DirectorRow
-  directorId         Text
+  directorId      Text
   UniqueDirectorId   directorId
-  name               Text
+  name            Text
 |]
+
 
 makeLensesWith classUnderscoreNoPrefixFields ''PersonId
 makeLensesWith classUnderscoreNoPrefixFields ''DirectorId
@@ -55,10 +59,16 @@ init = withMigration $ return ()
 clear :: DbCall()
 clear = withMigration $ deleteWhere ([] :: [Filter DirectorRow])
 
-write :: Director -> DbCall ()
-write = void <$> (withMigration . insert . view rowIso)
+invertIso :: DirectorRow -> Director
+invertIso = view (from rowIso)
 
-read :: DirectorId -> DbCall (Maybe Director)
-read directorId = withMigration $ do
-  result <- getBy $ UniqueDirectorId $ directorId ^. id ^. id
-  return $ view (from rowIso) . entityVal <$> result
+instance ExtractableId Director DirectorId where
+  extractId = view id
+instance ReadOnlyDatabase Director DirectorId DirectorRowId where
+  -- TODO handle code duplication
+  keyVal directorId = withMigration $ do
+    result <- getBy $ UniqueDirectorId $ directorId ^. id ^. id
+    return $ result <$$> (entityKey &&& invertIso . entityVal)
+instance ReadWriteDatabase Director DirectorId DirectorRowId where
+  forceInsert = withMigration . insert . view rowIso
+

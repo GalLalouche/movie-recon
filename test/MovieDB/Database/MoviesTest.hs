@@ -2,9 +2,9 @@
 
 module MovieDB.Database.MoviesTest where
 
-import MovieDB.Database.Movies (clear, init, write, read)
+import MovieDB.Database.Movies (clear, init, insertOrVerify, getValue)
 
-import Prelude hiding (read, init)
+import Prelude hiding (init)
 
 import MovieDB.Types (Movie(..), MovieId(..))
 
@@ -17,8 +17,8 @@ test_movie_database = [
       let id = MovieId "foobar"
       res <- withTempDb $ do
         init
-        write $ Movie id "moobar"
-        read id
+        insertOrVerify $ Movie id "moobar"
+        getValue id
       res @=? (Just $ Movie id "moobar")
       return ()
   ]

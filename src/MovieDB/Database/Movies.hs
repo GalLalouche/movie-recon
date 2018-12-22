@@ -1,39 +1,52 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings, GADTs, FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies, OverloadedStrings, GADTs, FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE QuasiQuotes, TemplateHaskell, MultiParamTypeClasses, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FunctionalDependencies #-}
+
 
 module MovieDB.Database.Movies(
   init,
   clear,
-  write,
-  read,
+  getValue,
+  insertOrVerify,
+  MovieRowId,
 ) where
 
-import Prelude hiding (init, read)
+import Prelude hiding (init, id)
 
 import Common.Operators
 
-import MovieDB.Database.Common (DbPath(..), DbCall)
-import MovieDB.Types (Movie(..), MovieId(..))
+import MovieDB.Types (Movie(..), MovieId(..), PersonId(..))
+import MovieDB.Database.Common (DbPath(..), DbCall(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify, getValue)
 
 import Data.Text (Text)
+import Control.Arrow ((&&&))
 import Control.Monad.Trans.Reader (ask)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad (void)
+import Data.Maybe (fromJust)
+import Control.Lens (makeLensesWith, classUnderscoreNoPrefixFields, Iso', iso, from, view, (^.))
 
-import Database.Persist.Sql (deleteWhere, entityVal, getBy, insert, Filter)
+import Database.Persist.Sql (deleteWhere, entityVal, entityKey, get, getBy, insert, Filter)
 import Database.Persist.Sqlite (runSqlite, runMigrationSilent)
 import Database.Persist.TH (mkPersist, mkMigrate, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 MovieRow
-  movieId         Text
+  movieId      Text
   UniqueMovieId   movieId
   name            Text
 |]
 
-fromMovie :: Movie -> MovieRow
-fromMovie (Movie (MovieId id) name) = MovieRow id name
-toMovie :: MovieRow -> Movie
-toMovie (MovieRow id name) = Movie (MovieId id) name
+
+makeLensesWith classUnderscoreNoPrefixFields ''MovieId
+makeLensesWith classUnderscoreNoPrefixFields ''Movie
+
+rowIso :: Iso' Movie MovieRow
+rowIso = iso fromMovie toMovie where
+  fromMovie :: Movie -> MovieRow
+  fromMovie movie = MovieRow (movie ^. id ^. id) (movie ^. name)
+  toMovie :: MovieRow -> Movie
+  toMovie (MovieRow id name) = Movie (MovieId id) name
 
 withMigration action = do
   dbPath <- path <$> ask
@@ -46,10 +59,16 @@ init = withMigration $ return ()
 clear :: DbCall()
 clear = withMigration $ deleteWhere ([] :: [Filter MovieRow])
 
-write :: Movie -> DbCall ()
-write = void <$> (withMigration . insert . fromMovie)
+invertIso :: MovieRow -> Movie
+invertIso = view (from rowIso)
 
-read :: MovieId -> DbCall (Maybe Movie)
-read (MovieId id) = withMigration $ do
-  result <- getBy $ UniqueMovieId id
-  return $ toMovie . entityVal <$> result
+instance ExtractableId Movie MovieId where
+  extractId = view id
+instance ReadOnlyDatabase Movie MovieId MovieRowId where
+  -- TODO handle code duplication
+  keyVal movieId = withMigration $ do
+    result <- getBy $ UniqueMovieId $ movieId ^. id
+    return $ result <$$> (entityKey &&& invertIso . entityVal)
+instance ReadWriteDatabase Movie MovieId MovieRowId where
+  forceInsert = withMigration . insert . view rowIso
+
