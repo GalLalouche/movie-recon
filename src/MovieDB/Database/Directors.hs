@@ -20,6 +20,7 @@ import MovieDB.Database.Common (DbPath(..), DbCall(..), ExtractableId(..), ReadO
 import Data.Text (Text)
 import Control.Arrow ((&&&))
 import Control.Monad.Trans.Reader (ask)
+import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (void)
 import Data.Maybe (fromJust)
@@ -66,9 +67,12 @@ instance ExtractableId Director DirectorId where
   extractId = view id
 instance ReadOnlyDatabase Director DirectorId DirectorRowId where
   -- TODO handle code duplication
-  keyVal directorId = withMigration $ do
+  keyVal directorId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueDirectorId $ directorId ^. id ^. id
-    return $ result <$$> (entityKey &&& invertIso . entityVal)
+    return $  result <$$> (entityKey &&& invertIso . entityVal)
+  getValueByRowId directorRowId = MaybeT $ withMigration $ do
+    result <- get directorRowId
+    return $ invertIso <$> result
 instance ReadWriteDatabase Director DirectorId DirectorRowId where
   forceInsert = withMigration . insert . view rowIso
 

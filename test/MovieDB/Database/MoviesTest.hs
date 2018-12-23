@@ -3,10 +3,11 @@
 module MovieDB.Database.MoviesTest where
 
 import MovieDB.Database.Movies (clear, init, insertOrVerify, getValue)
+import MovieDB.Types (Movie(..), MovieId(..))
+import Control.Monad.Trans.Maybe (runMaybeT)
 
 import Prelude hiding (init)
 
-import MovieDB.Types (Movie(..), MovieId(..))
 
 import MovieDB.Database.TestCommon (withTempDb)
 import Test.Tasty
@@ -18,7 +19,7 @@ test_movie_database = [
       res <- withTempDb $ do
         init
         insertOrVerify $ Movie id "moobar"
-        getValue id
+        runMaybeT $ getValue id
       res @=? (Just $ Movie id "moobar")
       return ()
   ]

@@ -21,6 +21,7 @@ import MovieDB.Database.Common (DbPath(..), DbCall(..), ExtractableId(..), ReadO
 import Data.Text (Text)
 import Control.Arrow ((&&&))
 import Control.Monad.Trans.Reader (ask)
+import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (void)
 import Data.Maybe (fromJust)
@@ -66,9 +67,12 @@ instance ExtractableId Movie MovieId where
   extractId = view id
 instance ReadOnlyDatabase Movie MovieId MovieRowId where
   -- TODO handle code duplication
-  keyVal movieId = withMigration $ do
+  keyVal movieId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueMovieId $ movieId ^. id
-    return $ result <$$> (entityKey &&& invertIso . entityVal)
+    return $  result <$$> (entityKey &&& invertIso . entityVal)
+  getValueByRowId movieRowId = MaybeT $ withMigration $ do
+    result <- get movieRowId
+    return $ invertIso <$> result
 instance ReadWriteDatabase Movie MovieId MovieRowId where
   forceInsert = withMigration . insert . view rowIso
 
