@@ -70,9 +70,7 @@ instance ReadOnlyDatabase Director DirectorId DirectorRowId where
   valueAndRowId directorId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueDirectorId $ directorId ^. id ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId directorRowId = MaybeT $ withMigration $ do
-    result <- get directorRowId
-    return $ invertIso <$> result
+  getValueByRowId directorRowId = withMigration $ (invertIso . fromJust) <$> get directorRowId
 instance ReadWriteDatabase Director DirectorId DirectorRowId where
   forceInsert = withMigration . insert . view rowIso
 

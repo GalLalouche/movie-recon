@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, AllowAmbiguousTypes, QuasiQuotes, FunctionalDependencies, RankNTypes, LambdaCase, ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses, AllowAmbiguousTypes, QuasiQuotes, FunctionalDependencies, RankNTypes, ScopedTypeVariables #-}
 
 module MovieDB.Database.Common where
 
@@ -25,7 +25,7 @@ class ExtractableId a typeId | a -> typeId where
 class ExtractableId a typeId => ReadOnlyDatabase a typeId rowId | typeId -> rowId a where
   valueAndRowId :: typeId -> DbMaybe (rowId, a)
   -- If someone passes a row ID, it means the value should damn well be there.
-  getValueByRowId :: rowId -> DbMaybe a
+  getValueByRowId :: rowId -> DbCall a
 
 class ReadOnlyDatabase a typeId rowId => ReadWriteDatabase a typeId rowId | typeId a -> rowId where
   -- TODO should be internal

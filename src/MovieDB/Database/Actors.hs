@@ -70,8 +70,6 @@ instance ReadOnlyDatabase Actor ActorId ActorRowId where
   valueAndRowId actorId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueActorId $ actorId ^. id ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId actorRowId = MaybeT $ withMigration $ do
-    result <- get actorRowId
-    return $ invertIso <$> result
+  getValueByRowId actorRowId = withMigration $ (invertIso . fromJust) <$> get actorRowId
 instance ReadWriteDatabase Actor ActorId ActorRowId where
   forceInsert = withMigration . insert . view rowIso

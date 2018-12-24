@@ -27,7 +27,8 @@ import MovieDB.Database.Writers (WriterRowId)
 import qualified MovieDB.Database.Writers as WDB
 
 import Data.Text (Text)
-import Control.Monad.Trans.Maybe (MaybeT(..))
+import Data.Maybe (fromJust)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Control.Monad.Trans.Reader (ask)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad (void)
@@ -64,15 +65,15 @@ clear = withMigration $ deleteWhere ([] :: [Filter CastAndCrewRow])
 instance ExtractableId CastAndCrew CastAndCrewId where
   extractId c = CastAndCrewId $ c ^. movie ^. id
 
-aux :: T.MovieId -> DbMaybe CastAndCrewRowId
-aux movieId = do
+rowIdByMovieId :: T.MovieId -> DbMaybe CastAndCrewRowId
+rowIdByMovieId movieId = do
   movieRowId <- getRowId movieId :: DbMaybe MovieRowId
   row <- MaybeT $ withMigration $ getBy $ UniqueMovieId movieRowId :: DbMaybe (Entity CastAndCrewRow)
   return $ entityKey row
 
 instance ReadOnlyDatabase CastAndCrew CastAndCrewId CastAndCrewRowId where
   getValueByRowId rowId = do
-    (CastAndCrewRow movieRowId directorRowId writerRowId actorRowIds) <- MaybeT $ withMigration $ get rowId
+    (CastAndCrewRow movieRowId directorRowId writerRowId actorRowIds) <- withMigration $ fromJust <$> get rowId
     movie <- getValueByRowId movieRowId
     director <- getValueByRowId directorRowId
     writer <- getValueByRowId writerRowId
@@ -80,8 +81,8 @@ instance ReadOnlyDatabase CastAndCrew CastAndCrewId CastAndCrewRowId where
     return $ CastAndCrew movie director writer actors
   valueAndRowId (CastAndCrewId id) = do
     let movieId = id :: T.MovieId
-    rowId <- aux movieId
-    value <- getValueByRowId rowId
+    rowId <- rowIdByMovieId movieId
+    value <- MaybeT $ Just <$> getValueByRowId rowId
     return (rowId, value)
 
 instance ReadWriteDatabase CastAndCrew CastAndCrewId CastAndCrewRowId where

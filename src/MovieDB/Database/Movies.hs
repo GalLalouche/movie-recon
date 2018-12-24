@@ -70,9 +70,7 @@ instance ReadOnlyDatabase Movie MovieId MovieRowId where
   valueAndRowId movieId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueMovieId $ movieId ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId movieRowId = MaybeT $ withMigration $ do
-    result <- get movieRowId
-    return $ invertIso <$> result
+  getValueByRowId movieRowId = withMigration $ (invertIso . fromJust) <$> get movieRowId
 instance ReadWriteDatabase Movie MovieId MovieRowId where
   forceInsert = withMigration . insert . view rowIso
 
