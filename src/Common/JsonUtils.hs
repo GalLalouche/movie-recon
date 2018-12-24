@@ -3,7 +3,8 @@
 {-| A bunch of patently unsafe functions, since type-safe JSON is the way to madness. |-}
 module Common.JsonUtils where
 
-import Data.Aeson (Value, Array, Object, (.:), withObject, withArray, decode, fromJSON, Result(..))
+import Data.Aeson (Value, Array, Object, withObject, withArray, decode, fromJSON, Result(..))
+import qualified Data.Aeson((.:))
 import Data.Vector (Vector)
 import Data.Aeson.Types (Parser, FromJSON)
 
@@ -38,8 +39,7 @@ asObject :: Value -> Parser Object
 asObject = withObject "object" return
 
 get :: FromJSON a => Text -> Object -> Parser a
-get = flip (.:)
-
+get = flip (Data.Aeson..:)
 
 int :: Text -> Object -> Parser Int
 int = get
