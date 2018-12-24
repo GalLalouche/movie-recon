@@ -67,7 +67,7 @@ instance ExtractableId Director DirectorId where
   extractId = view id
 instance ReadOnlyDatabase Director DirectorId DirectorRowId where
   -- TODO handle code duplication
-  keyVal directorId = MaybeT $ withMigration $ do
+  valueAndRowId directorId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueDirectorId $ directorId ^. id ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
   getValueByRowId directorRowId = MaybeT $ withMigration $ do

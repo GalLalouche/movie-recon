@@ -15,7 +15,7 @@ import Prelude hiding (init, id)
 import Common.Operators
 
 import MovieDB.Types (CastAndCrew(..), CastAndCrewIds(..), CastAndCrewId(..))
-import MovieDB.Database.Common (DbPath(..), DbCall(..), DbMaybe(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify, getKey, getValueByRowId, insertOrVerify, getValue)
+import MovieDB.Database.Common (DbPath(..), DbCall(..), DbMaybe(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify, getRowId, getValueByRowId, insertOrVerify, getValue)
 import qualified MovieDB.Types as T
 import MovieDB.Database.Movies (MovieRowId)
 import qualified MovieDB.Database.Movies as MDB
@@ -66,7 +66,7 @@ instance ExtractableId CastAndCrew CastAndCrewId where
 
 aux :: T.MovieId -> DbMaybe CastAndCrewRowId
 aux movieId = do
-  movieRowId <- getKey movieId :: DbMaybe MovieRowId
+  movieRowId <- getRowId movieId :: DbMaybe MovieRowId
   row <- MaybeT $ withMigration $ getBy $ UniqueMovieId movieRowId :: DbMaybe (Entity CastAndCrewRow)
   return $ entityKey row
 
@@ -78,7 +78,7 @@ instance ReadOnlyDatabase CastAndCrew CastAndCrewId CastAndCrewRowId where
     writer <- getValueByRowId writerRowId
     actors <- traverse getValueByRowId actorRowIds
     return $ CastAndCrew movie director writer actors
-  keyVal (CastAndCrewId id) = do
+  valueAndRowId (CastAndCrewId id) = do
     let movieId = id :: T.MovieId
     rowId <- aux movieId
     value <- getValueByRowId rowId

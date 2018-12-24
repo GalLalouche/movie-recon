@@ -67,7 +67,7 @@ instance ExtractableId Writer WriterId where
   extractId = view id
 instance ReadOnlyDatabase Writer WriterId WriterRowId where
   -- TODO handle code duplication
-  keyVal writerId = MaybeT $ withMigration $ do
+  valueAndRowId writerId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueWriterId $ writerId ^. id ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
   getValueByRowId writerRowId = MaybeT $ withMigration $ do

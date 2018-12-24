@@ -67,7 +67,7 @@ instance ExtractableId Actor ActorId where
   extractId = view id
 instance ReadOnlyDatabase Actor ActorId ActorRowId where
   -- TODO handle code duplication
-  keyVal actorId = MaybeT $ withMigration $ do
+  valueAndRowId actorId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueActorId $ actorId ^. id ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
   getValueByRowId actorRowId = MaybeT $ withMigration $ do
