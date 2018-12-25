@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, AllowAmbiguousTypes, QuasiQuotes, FunctionalDependencies, RankNTypes, ScopedTypeVariables #-}
+{-# LANGUAGE MultiParamTypeClasses, AllowAmbiguousTypes, QuasiQuotes, FunctionalDependencies, ScopedTypeVariables #-}
 
 module MovieDB.Database.Common where
 

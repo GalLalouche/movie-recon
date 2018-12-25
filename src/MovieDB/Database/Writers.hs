@@ -70,7 +70,7 @@ instance ReadOnlyDatabase Writer WriterId WriterRowId where
   valueAndRowId writerId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueWriterId $ writerId ^. id ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId movieRowId = withMigration $ (invertIso . fromJust) <$> get movieRowId
+  getValueByRowId writerRowId = withMigration $ (invertIso . fromJust) <$> get writerRowId
 instance ReadWriteDatabase Writer WriterId WriterRowId where
   forceInsert = withMigration . insert . view rowIso
 
