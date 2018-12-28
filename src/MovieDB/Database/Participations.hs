@@ -1,56 +1,99 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, ScopedTypeVariables, LambdaCase #-}
+{-# LANGUAGE DuplicateRecordFields, FlexibleContexts, GADTs, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses, QuasiQuotes, TemplateHaskell, TypeFamilies          #-}
 
-module MovieDB.Database.Participations where
+module MovieDB.Database.Participations(
+  init,
+  clear,
+  addEntry,
+  addValueEntry,
+  hasParticipated,
+  getParticipationsForMovie,
+  getParticipationsForPerson,
+  EntryResult(..),
+  castAndCrew,
+) where
 
-import MovieDB.Database.Common (DbCall(..), ExtractableId, extractId, ReadOnlyDatabase, getRowId, getValueByRowId, ReadWriteDatabase, insertOrVerify)
-import MovieDB.Database.Movies (MovieRowId)
-import MovieDB.Types (Movie)
+import           Prelude                          hiding (head, init)
 
-import Control.Monad.Trans.Maybe (runMaybeT, MaybeT(..))
-import Data.Maybe (isJust)
+import           Control.Monad.Trans.Reader       (ask)
+import           Data.List.NonEmpty               (NonEmpty(..), head)
 
-import Common.Operators
+import           Common.Maps                      (monoidLookup, multiMapBy)
+import           Common.MaybeTUtils               (fromList)
+import           Common.Operators
 
-class ParticipationReadOnly valueRowId where
-  -- A movie can have multiple crew of the same type, e.g., multiple directors, writers, and of course actors.
-  crewRowIds :: MovieRowId -> DbCall [valueRowId]
-  -- A writer or director can obviously have multiple movies.
-  movieRowIds :: valueRowId -> DbCall [MovieRowId]
+import           MovieDB.Database.Common          (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
+import           MovieDB.Database.Movies          (MaybeMovieRowable, MovieRowId, MovieRowable,
+                                                   toMaybeMovieRowId, toMovieRowId)
+import qualified MovieDB.Database.ParticipationTH as TemplatesOnly
+import           MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Types                    (CastAndCrew(..), Movie, Participation(..),
+                                                   ParticipationType(..), Person)
 
-crew :: forall value valueRowId typeId .
-    (ReadOnlyDatabase value typeId valueRowId, ParticipationReadOnly valueRowId) => Movie -> DbCall [value]
-crew movie = runMaybeT (getRowId $ extractId movie) >>= \case
-  Nothing -> return []
-  Just movieRowId -> do
-    cris <- crewRowIds movieRowId
-    traverse getValueByRowId cris
+import           Database.Persist.Sql             (Filter, deleteWhere, entityVal, insert, selectList, (==.))
+import           Database.Persist.Sqlite          (runMigrationSilent, runSqlite)
+import           Database.Persist.TH              (derivePersistField, mkMigrate, mkPersist, persistLowerCase,
+                                                   share, sqlSettings)
 
-movies :: forall value valueRowId typeId .
-    (ExtractableId value typeId, ReadOnlyDatabase value typeId valueRowId, ParticipationReadOnly valueRowId) =>
-    value -> DbCall [Movie]
-movies value = runMaybeT (getRowId $ extractId value) >>= \case
-  Nothing -> return []
-  Just rowId -> do
-    movieRowIds <- movieRowIds rowId
-    traverse getValueByRowId movieRowIds
+share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
+ParticipationRow
+  personId  PersonRowId
+  movieId   MovieRowId
+  type      ParticipationType
+|]
 
-data EntryResult = Participated | DidNotParticipate | Unknown -- When the movie has no entry
-hasParticipated :: forall value valueRowId typeId p .
-    (Eq value, ReadOnlyDatabase value typeId valueRowId, ParticipationReadOnly valueRowId) =>
-    value -> Movie -> DbCall EntryResult
-hasParticipated a movie = fromList <$> crew movie where
-  fromList [] = Unknown
-  fromList cast = if a `elem` cast then Participated else DidNotParticipate
+withMigration action = do
+  dbPath <- path <$> ask
+  runSqlite dbPath (runMigrationSilent migrateTables >> action)
 
-class ParticipationDatabase valueRowId participationRowId | valueRowId -> participationRowId where
-  addEntry :: MovieRowId -> valueRowId -> DbCall participationRowId
 
-addValueEntry :: forall value valueRowId typeId participationRowId .
-    (Show value, Eq value
-    , ExtractableId value typeId
-    , ReadWriteDatabase value typeId valueRowId
-    , ParticipationDatabase valueRowId participationRowId) => Movie -> value -> DbCall participationRowId
-addValueEntry movie v = do
-  movieRowId <- insertOrVerify movie
-  vRowId <- insertOrVerify v :: DbCall valueRowId
-  addEntry movieRowId vRowId
+init :: DbCall()
+init = withMigration $ return ()
+
+clear :: DbCall()
+clear = withMigration $ deleteWhere ([] :: [Filter ParticipationRow])
+
+addEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbCall ParticipationRowId
+addEntry = withMigration . insert ..: ParticipationRow
+
+addValueEntry :: Participation -> DbCall ParticipationRowId
+addValueEntry (Participation person movie pt) = do
+  pri <- insertOrVerify person
+  mri <- insertOrVerify movie
+  addEntry pri mri pt
+
+toParticipation :: ParticipationRow -> DbCall Participation
+toParticipation (ParticipationRow pid mid pt) =
+ Participation <$> getValueByRowId pid <*> getValueByRowId mid <*> return pt
+
+participationsAux column rowIdExtractor value = do
+  rowId <- rowIdExtractor value
+  result <- withMigration $ map entityVal <$> selectList [column ==. rowId] []
+  traverse toParticipation result
+
+getParticipationsForMovie :: MovieRowable m => m -> DbCall [Participation]
+getParticipationsForMovie = participationsAux ParticipationRowMovieId toMovieRowId
+
+getParticipationsForPerson :: PersonRowable p => p -> DbCall [Participation]
+getParticipationsForPerson = participationsAux ParticipationRowPersonId toPersonRowId
+
+-- "Nothing" is returned if there are no participation entries for the movie.
+castAndCrew :: MaybeMovieRowable m => m -> DbMaybe CastAndCrew
+castAndCrew m = do
+  mid <- toMaybeMovieRowId m
+  toCastAndCrew <$> fromList (getParticipationsForMovie mid) where
+    toCastAndCrew :: NonEmpty Participation -> CastAndCrew
+    toCastAndCrew ps = let
+        map = multiMapBy participationType ps
+        m = movie (head ps :: Participation)
+        getAll pt = person <$> monoidLookup pt map
+        directors = getAll Director
+        writers = getAll Writer
+        actors = getAll Actor
+      in CastAndCrew { movie=m, directors=directors, writers=writers, actors=actors }
+
+data EntryResult = Participated | DidNotParticipate | Unknown -- When the movie has no participations at all
+hasParticipated :: Person -> Movie -> DbCall EntryResult
+hasParticipated p movie = fromList . map person <$> getParticipationsForMovie movie where
+  fromList []   = Unknown
+  fromList crew = if p `elem` crew then Participated else DidNotParticipate

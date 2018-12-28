@@ -2,29 +2,36 @@
 
 module MovieDB.Database.ParticipationsTest where
 
-import           Control.Monad.Trans.Maybe       (runMaybeT)
-import qualified MovieDB.Database.Acted          as InstancesOnly
-import           MovieDB.Database.Common         (DbCall)
-import           MovieDB.Database.Participations
-import           MovieDB.Types                   (Actor(..), ActorId(..), Movie(..), MovieId(..), PersonId)
+import Common.MaybeTUtils (fromJust)
 
-import           MovieDB.Database.TestCommon     (unsafeMakeMovie, unsafeMakePerson, withTempDb)
+import           MovieDB.Database.Common         (DbCall)
+import qualified MovieDB.Database.Movies         as InstancesOnly
+import           MovieDB.Database.Participations
+import           MovieDB.Database.TestCommon     (makeMovie, makePerson, withTempDb)
+import           MovieDB.Types                   (Movie(..), MovieId(..), Participation(..),
+                                                  ParticipationType(..), PersonId, CastAndCrew(..))
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
 
 test_participations = [
     testCase "read after write" $ do
-      let actor1 = unsafeMakePerson "actor1" :: Actor
-      let actor2 = unsafeMakePerson "actor2" :: Actor
-      let actor3 = unsafeMakePerson "actor3" :: Actor
-      let movie1 = unsafeMakeMovie "movie1"
-      let movie2 = unsafeMakeMovie "movie2"
+      let actor1 = makePerson "actor1"
+      let actor2 = makePerson "actor2"
+      let actor3 = makePerson "actor3"
+      let director = makePerson "director"
+      let writer = makePerson "director"
+      let movie1 = makeMovie "movie1"
+      let movie2 = makeMovie "movie2"
       res <- withTempDb $ do
-        addValueEntry movie1 actor1
-        addValueEntry movie1 actor3
-        addValueEntry movie2 actor2
-        crew movie1 :: DbCall [Actor]
-      res @=? [actor1, actor3]
+        addValueEntry $ Participation director movie1 Director
+        addValueEntry $ Participation writer movie2 Writer
+        addValueEntry $ Participation actor1 movie1 Actor
+        addValueEntry $ Participation actor2 movie2 Actor
+        addValueEntry $ Participation actor3 movie1 Actor
+        fromJust $ castAndCrew movie1
+      directors res @=? [director]
+      writers res @=? []
+      actors res @=? [actor1, actor3]
       return ()
   ]

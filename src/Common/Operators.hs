@@ -73,6 +73,10 @@ f <&> x = f <*> pure x
 infixl 4 <&> -- same priority as <*>
 
 -- Operator taken from here: https://stackoverflow.com/a/51097392/736508
-(.:) :: (midResult -> finalResult) -> (x -> y -> midResult) -> (x -> y -> finalResult)
+(.:) :: (midResult -> finalResult) -> (a -> b -> midResult) -> (a -> b -> finalResult)
 (.:) f g x y = f $ g x y -- (.).(.) also works, see also: https://wiki.haskell.org/Pointfree#Dot
 infixr 8 .: -- one below (.), so f . g .: h can be used without parens
+
+(..:) :: (midResult -> finalResult) -> (a -> b -> c -> midResult) -> (a -> b -> c -> finalResult)
+(..:) f g x y z = f $ g x y z -- (.:).(.) also works
+infixr 8 ..:

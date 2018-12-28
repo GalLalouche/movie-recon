@@ -2,8 +2,8 @@
 
 module MovieDB.Database.TestCommon (
   withTempDb,
-  unsafeMakePerson,
-  unsafeMakeMovie,
+  makePerson,
+  makeMovie,
 ) where
 
 import System.IO.Temp
@@ -26,8 +26,8 @@ withTempFile' f = withTempFile "." "temp_db" $ const . f . pack
 withTempDb :: DbCall a -> IO a
 withTempDb call = withTempFile' $ runReaderT call . DbPath
 
-unsafeMakePerson :: T.Person p => Text -> p
-unsafeMakePerson name = makePerson (T.PersonId $ name <> "Id") name
+makePerson :: Text -> Person
+makePerson name = T.Person (T.PersonId $ name <> "Id") name
 
-unsafeMakeMovie :: Text -> T.Movie
-unsafeMakeMovie name = T.Movie (T.MovieId $ name <> "Id") name
+makeMovie :: Text -> T.Movie
+makeMovie name = T.Movie (T.MovieId $ name <> "Id") name

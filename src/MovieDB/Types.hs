@@ -4,60 +4,17 @@ module MovieDB.Types where
 
 import Data.Text (Text)
 
-
 newtype PersonId = PersonId
   { _id :: Text
   } deriving (Show, Eq, Ord)
 
-class Person a where
-  personId :: a -> PersonId
-  personName :: a -> Text
-  makePerson :: PersonId -> Text -> a
-
-deepId :: Person p => p -> Text
-deepId p = _id (personId p :: PersonId)
-
-newtype DirectorId = DirectorId
+data Person = Person
   { _id :: PersonId
-  } deriving (Show, Eq, Ord)
-
-data Director = Director
-  { _id :: DirectorId
   , _name :: Text
   } deriving (Show, Eq, Ord)
 
-instance Person Director where
-  personId d = let dId = _id (d :: Director) in _id (dId :: DirectorId)
-  personName = _name
-  makePerson = Director . DirectorId
-
-newtype WriterId = WriterId
-  { _id :: PersonId
-  } deriving (Show, Eq, Ord)
-
-data Writer = Writer
-  { _id :: WriterId
-  , _name :: Text
-  } deriving (Show, Eq, Ord)
-
-instance Person Writer where
-  personId d = let dId = _id (d :: Writer) in _id (dId :: WriterId)
-  personName = _name
-  makePerson = Writer . WriterId
-
-newtype ActorId = ActorId
-  { _id :: PersonId
-  } deriving (Show, Eq, Ord)
-
-data Actor = Actor
-  { _id :: ActorId
-  , _name :: Text
-  } deriving (Show, Eq, Ord)
-
-instance Person Actor where
-  personId d = let dId = _id (d :: Actor) in _id (dId :: ActorId)
-  personName = _name
-  makePerson = Actor . ActorId
+deepId :: Person -> Text
+deepId p = let personId = _id (p :: Person) in _id (personId :: PersonId)
 
 newtype MovieId = MovieId
   { _id :: Text
@@ -69,11 +26,19 @@ data Movie = Movie
   } deriving (Show, Eq, Ord)
 
 data CastAndCrew = CastAndCrew
-  { _movie :: Movie
-  , _directors :: [Director]
-  , _writers :: [Writer]
-  , _cast :: [Actor]
+  { movie :: Movie
+  , directors :: [Person]
+  , writers :: [Person]
+  , actors :: [Person]
   } deriving (Show, Eq, Ord)
+
+data ParticipationType = Director | Writer | Actor deriving (Show, Read, Eq, Ord)
+
+data Participation = Participation
+  { person :: Person
+  , movie :: Movie
+  , participationType :: ParticipationType
+  }
 
 newtype Query = Query
   { query :: Text
