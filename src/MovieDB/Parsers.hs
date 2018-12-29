@@ -14,7 +14,7 @@ import           Data.Text          (pack, unpack)
 import           Data.Aeson         (Object, Value)
 import           Data.Aeson.Types   (Parser)
 
-import           Common.JsonUtils   (asObject, int, objects, str)
+import           Common.JsonUtils   (asObject, int, objects, str, strRead)
 import           Common.MonadPluses
 import           Common.Operators
 
@@ -51,5 +51,4 @@ parseMovieCredits = parseCastAndCrew parsePerson where
 
 parsePersonCredits :: Value -> Parser [(Movie, ParticipationType)]
 parsePersonCredits = parseCastAndCrew parseMovie where
-  parseMovie o = Movie <$> getId MovieId o <*> str "title" o <*> getDate o
-  getDate = str "release_date" >$> (read . unpack)
+  parseMovie o = Movie <$> getId MovieId o <*> str "title" o <*> strRead "release_date" o

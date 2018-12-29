@@ -10,7 +10,7 @@ import           Data.Aeson.Types          (FromJSON, Parser)
 import           Data.Vector               (Vector)
 
 import           Data.ByteString.Lazy.UTF8 (ByteString, fromString)
-import           Data.Text                 (Text)
+import           Data.Text                 (Text, unpack)
 import           Data.Text.Lazy            (fromStrict)
 import           Data.Text.Lazy.Encoding   (encodeUtf8)
 
@@ -46,6 +46,9 @@ int = get
 
 str :: Text -> Object -> Parser Text
 str = get
+
+strRead :: Read a => Text -> Object -> Parser a
+strRead t = str t >$> read . unpack
 
 array :: Text -> Object -> Parser Array
 array = get >==> withArray "array" return
