@@ -39,6 +39,7 @@ dependencies:
 - exceptions
 - temporary
 - lens
+- time
 
 library:
   source-dirs: src

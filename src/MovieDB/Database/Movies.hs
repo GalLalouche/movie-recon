@@ -35,6 +35,7 @@ import           Control.Monad.Trans.Maybe  (MaybeT(..))
 import           Control.Monad.Trans.Reader (ask)
 import           Data.Maybe                 (fromJust)
 import           Data.Text                  (Text)
+import           Data.Time                  (Day)
 
 import           Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert)
 import           Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
@@ -42,9 +43,10 @@ import           Database.Persist.TH        (mkMigrate, mkPersist, persistLowerC
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 MovieRow
-  movieId      Text
+  movieId         Text
   UniqueMovieId   movieId
   name            Text
+  date            Day
 |]
 
 
@@ -54,9 +56,9 @@ makeLensesWith classUnderscoreNoPrefixFields ''Movie
 rowIso :: Iso' Movie MovieRow
 rowIso = iso fromMovie toMovie where
   fromMovie :: Movie -> MovieRow
-  fromMovie movie = MovieRow (movie ^. id ^. id) (movie ^. name)
+  fromMovie movie = MovieRow (movie ^. id ^. id) (movie ^. name) (movie ^. date)
   toMovie :: MovieRow -> Movie
-  toMovie (MovieRow id name) = Movie (MovieId id) name
+  toMovie (MovieRow id name date) = Movie (MovieId id) name date
 
 withMigration action = do
   dbPath <- path <$> ask

@@ -3,6 +3,7 @@
 module MovieDB.Types where
 
 import Data.Text (Text)
+import Data.Time (Day)
 
 newtype PersonId = PersonId
   { _id :: Text
@@ -23,6 +24,7 @@ newtype MovieId = MovieId
 data Movie = Movie
   { _id :: MovieId
   , _name :: Text
+  , _date :: Day
   } deriving (Show, Eq, Ord)
 
 data CastAndCrew = CastAndCrew

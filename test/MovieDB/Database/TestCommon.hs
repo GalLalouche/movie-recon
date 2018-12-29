@@ -8,15 +8,16 @@ module MovieDB.Database.TestCommon (
 
 import System.IO.Temp
 
-import Control.Monad.Catch (MonadMask)
-import Control.Monad.IO.Class (MonadIO)
-import Data.Text (Text, pack)
-
+import Control.Monad.Catch        (MonadMask)
+import Control.Monad.IO.Class     (MonadIO)
 import Control.Monad.Trans.Reader (runReaderT)
-import Data.Monoid ((<>))
 
-import MovieDB.Database.Common (DbCall, DbPath(..))
-import MovieDB.Types as T
+import Data.Monoid                ((<>))
+import Data.Text                  (Text, pack)
+import Data.Time                  (fromGregorian)
+
+import MovieDB.Database.Common    (DbCall, DbPath(..))
+import MovieDB.Types              as T
 
 -- Removes the need to explicitly use handle
 withTempFile' :: (MonadIO m, MonadMask m) => (Text -> m a) -> m a
@@ -30,4 +31,4 @@ makePerson :: Text -> Person
 makePerson name = T.Person (T.PersonId $ name <> "Id") name
 
 makeMovie :: Text -> T.Movie
-makeMovie name = T.Movie (T.MovieId $ name <> "Id") name
+makeMovie name = T.Movie (T.MovieId $ name <> "Id") name (fromGregorian 2000 1 1)
