@@ -30,8 +30,8 @@ test_participations = [
         addValueEntry $ Participation actor2 movie2 Actor
         addValueEntry $ Participation actor3 movie1 Actor
         fromJust $ castAndCrew movie1
-      directors res @=? [director]
-      writers res @=? []
-      actors res @=? [actor1, actor3]
+      directors res @?= [director]
+      writers res @?= []
+      actors res @?= [actor1, actor3]
       return ()
   ]
