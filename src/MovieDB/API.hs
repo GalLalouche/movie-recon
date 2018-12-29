@@ -11,6 +11,7 @@ import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask)
 
 import           Data.ByteString.Lazy.UTF8  (fromString)
+import qualified Data.List.NonEmpty         as NEL
 import           Data.String.Interpolate    (i)
 import           Data.Text                  (Text, pack)
 
@@ -18,7 +19,8 @@ import qualified Data.Aeson                 as Aeson
 import qualified Data.Aeson.Types           as AesonT
 
 import qualified MovieDB.Parsers            as P
-import           MovieDB.Types              (MovieId(..), ParticipationType, Person)
+import           MovieDB.Types              (CastAndCrew(..), Movie(..), MovieId, Participation(..),
+                                             ParticipationType, Person(..), PersonId, toCastAndCrew)
 
 import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
 
@@ -26,15 +28,9 @@ newtype ApiKey = ApiKey { key :: Text }
 
 type ApiCall a = ReaderT ApiKey IO a
 
-newtype MovieCredits = MovieCredits { movieId :: MovieId }
-
 class ApiQuery q r | q -> r, r -> q where
   buildQuery :: q -> Text
   parse :: AesonT.Value -> AesonT.Parser r
-
-instance ApiQuery MovieCredits [(Person, ParticipationType)] where
-  buildQuery (MovieCredits mid) = pack [i|movie/#{mid}/credits|]
-  parse = P.parseMovieCredits
 
 runQuery :: ApiQuery q r => q -> ApiCall r
 runQuery q = do
@@ -44,3 +40,15 @@ runQuery q = do
   let res = simpleHTTP (getRequest request) >>= getResponseBody
   json <- liftIO $ res <$$> (fromString .> Aeson.eitherDecode .> right) :: ApiCall Aeson.Value
   return $ fromSuccess $ AesonT.parse parse json
+
+newtype MovieCredits = MovieCredits { id :: MovieId }
+instance ApiQuery MovieCredits [(Person, ParticipationType)] where
+  buildQuery (MovieCredits mid) = pack [i|movie/#{mid}/credits|]
+  parse = P.parseMovieCredits
+
+castAndCrew :: Movie -> ApiCall CastAndCrew
+castAndCrew m@(Movie mid _ _) = do
+  ps <- participations m <$> runQuery (MovieCredits mid)
+  return $ toCastAndCrew $ NEL.fromList ps where
+    participations :: Movie -> [(Person, ParticipationType)] -> [Participation]
+    participations movie = map aux where aux (p, pt) = Participation p movie pt

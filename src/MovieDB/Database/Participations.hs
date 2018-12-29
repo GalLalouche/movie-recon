@@ -13,12 +13,10 @@ module MovieDB.Database.Participations(
   castAndCrew,
 ) where
 
-import           Prelude                          hiding (head, init)
+import           Prelude                          hiding (init)
 
 import           Control.Monad.Trans.Reader       (ask)
-import           Data.List.NonEmpty               (NonEmpty(..), head)
 
-import           Common.Maps                      (monoidLookup, multiMapBy)
 import           Common.MaybeTUtils               (fromList)
 import           Common.Operators
 
@@ -27,8 +25,8 @@ import           MovieDB.Database.Movies          (MaybeMovieRowable, MovieRowId
                                                    toMaybeMovieRowId, toMovieRowId)
 import qualified MovieDB.Database.ParticipationTH as TemplatesOnly
 import           MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
-import           MovieDB.Types                    (CastAndCrew(..), Movie, Participation(..),
-                                                   ParticipationType(..), Person)
+import           MovieDB.Types                    (CastAndCrew, Movie, Participation(..),
+                                                   ParticipationType, Person, toCastAndCrew)
 
 import           Database.Persist.Sql             (Filter, deleteWhere, entityVal, insert, selectList, (==.))
 import           Database.Persist.Sqlite          (runMigrationSilent, runSqlite)
@@ -81,16 +79,7 @@ getParticipationsForPerson = participationsAux ParticipationRowPersonId toPerson
 castAndCrew :: MaybeMovieRowable m => m -> DbMaybe CastAndCrew
 castAndCrew m = do
   mid <- toMaybeMovieRowId m
-  toCastAndCrew <$> fromList (getParticipationsForMovie mid) where
-    toCastAndCrew :: NonEmpty Participation -> CastAndCrew
-    toCastAndCrew ps = let
-        map = multiMapBy participationType ps
-        m = movie (head ps :: Participation)
-        getAll pt = person <$> monoidLookup pt map
-        directors = getAll Director
-        writers = getAll Writer
-        actors = getAll Actor
-      in CastAndCrew { movie=m, directors=directors, writers=writers, actors=actors }
+  toCastAndCrew <$> fromList (getParticipationsForMovie mid)
 
 data EntryResult = Participated | DidNotParticipate | Unknown -- When the movie has no participations at all
 hasParticipated :: Person -> Movie -> DbCall EntryResult

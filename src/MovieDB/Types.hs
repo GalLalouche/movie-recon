@@ -4,6 +4,8 @@ module MovieDB.Types where
 
 import Data.Text (Text)
 import Data.Time (Day)
+import Common.Maps (multiMapBy, monoidLookup)
+import Data.List.NonEmpty (NonEmpty((:|)))
 
 newtype PersonId = PersonId
   { _id :: Text
@@ -41,3 +43,14 @@ data Participation = Participation
   , movie :: Movie
   , participationType :: ParticipationType
   } deriving (Show, Eq, Ord)
+
+toCastAndCrew :: NonEmpty Participation -> CastAndCrew
+toCastAndCrew ps@(p :| _) = let
+    map = multiMapBy participationType ps
+    m = movie (p :: Participation)
+    getAll pt = person <$> monoidLookup pt map
+    directors = getAll Director
+    writers = getAll Writer
+    actors = getAll Actor
+  in CastAndCrew { movie = m, directors = directors, writers = writers, actors = actors }
+
