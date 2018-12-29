@@ -1,0 +1,113 @@
+{
+  "cast": [
+    {
+      "character": "Bruce Wayne / Batman",
+      "credit_id": "52fe422fc3a36847f800aa01",
+      "poster_path": "/kBf3g9crrADGMc2AMAMlLBgSm2h.jpg",
+      "id": 268,
+      "video": false,
+      "vote_count": 3379,
+      "adult": false,
+      "backdrop_path": "/2blmxp2pr4BhwQr74AdCfwgfMOb.jpg",
+      "genre_ids": [
+        14,
+        28
+      ],
+      "original_language": "en",
+      "original_title": "Batman",
+      "popularity": 13.819,
+      "title": "Batman",
+      "vote_average": 7.1,
+      "overview": "The Dark Knight of Gotham City begins his war on crime with his first major enemy being the clownishly homicidal Joker, who has seized control of Gotham's underworld.",
+      "release_date": "1989-06-23"
+    },
+    {
+      "character": "Bruce Wayne / Batman",
+      "credit_id": "52fe423cc3a36847f800e57d",
+      "poster_path": "/jX5THE1yW3zTdeD9dupcIyQvKiG.jpg",
+      "id": 364,
+      "video": false,
+      "vote_count": 2792,
+      "adult": false,
+      "backdrop_path": "/wNIE5dpkiHU2csDRptMutFjAGiV.jpg",
+      "genre_ids": [
+        28,
+        14
+      ],
+      "original_language": "en",
+      "original_title": "Batman Returns",
+      "popularity": 18.019,
+      "title": "Batman Returns",
+      "vote_average": 6.7,
+      "overview": "Having defeated the Joker, Batman now faces the Penguin - a warped and deformed individual who is intent on being accepted into Gotham society. Crooked businessman Max Schreck is coerced into helping him become Mayor of Gotham and they both attempt to expose Batman in a different light. Selina Kyle, Max's secretary, is thrown from the top of a building and is transformed into Catwoman - a mysterious figure who has the same personality disorder as Batman. Batman must attempt to clear his name, all the time deciding just what must be done with the Catwoman.",
+      "release_date": "1992-06-19"
+    },
+    {
+      "character": "Riggan Thomson",
+      "credit_id": "52fe4cf29251416c91105647",
+      "release_date": "2014-10-17",
+      "vote_count": 6806,
+      "video": false,
+      "adult": false,
+      "vote_average": 7.4,
+      "title": "Birdman",
+      "genre_ids": [
+        35,
+        18
+      ],
+      "original_language": "en",
+      "original_title": "Birdman",
+      "popularity": 39.385,
+      "id": 194662,
+      "backdrop_path": "/AsJVim0Hk3KbQPbfjyijfjqmaoZ.jpg",
+      "overview": "A fading actor best known for his portrayal of a popular superhero attempts to mount a comeback by appearing in a Broadway play. As opening night approaches, his attempts to become more altruistic, rebuild his career, and reconnect with friends and family prove more difficult than expected.",
+      "poster_path": "/rSZs93P0LLxqlVEbI001UKoeCQC.jpg"
+    }
+  ],
+  "crew": [
+    {
+      "id": 24053,
+      "department": "Directing",
+      "original_language": "en",
+      "original_title": "The Merry Gentleman",
+      "job": "Director",
+      "overview": "A woman who leaves an abusive relationship to begin a new life in a new city, where she forms an unlikely and ironic relationship with a suicidal hit man (unbeknownst to her). Enter a worn, alcoholic detective to form the third party in a very unusual triangle as this story begins to unfold.",
+      "vote_count": 14,
+      "video": false,
+      "release_date": "2008-04-16",
+      "vote_average": 6.5,
+      "title": "The Merry Gentleman",
+      "popularity": 1.375,
+      "genre_ids": [
+        18
+      ],
+      "backdrop_path": "/w6zXYxMCigUMOZqQ33rdRDyj5I4.jpg",
+      "adult": false,
+      "poster_path": "/pjRLAyDPWPPziUoHSof6WPOu8yO.jpg",
+      "credit_id": "52fe447fc3a368484e0267db"
+    },
+    {
+      "id": 14484,
+      "department": "Production",
+      "original_language": "en",
+      "original_title": "Body Shots",
+      "job": "Executive Producer",
+      "overview": "The Los Angeles club scene is a place of booze-fueled decadence and debauchery. In a night full of possibilities, eight 20-somethings take to the clubs seeking good times, companionship and maybe a little sex. But in the harsh light of the morning after, their worlds are thrown into a spin of confusion when hungover Sara accuses hard-partying Mike of date rape. Loyalties are tested as each among them is forced to take sides.",
+      "vote_count": 32,
+      "video": false,
+      "poster_path": "/c2o3Kai2vduoYmCcu5Yxzqc9tSr.jpg",
+      "backdrop_path": "/m2W4z695Eaht0r6Ci8Z1zT52gq.jpg",
+      "title": "Body Shots",
+      "popularity": 2.379,
+      "genre_ids": [
+        18,
+        10749
+      ],
+      "vote_average": 5.1,
+      "adult": false,
+      "release_date": "1999-10-07",
+      "credit_id": "532a6427c3a3681fdd000e34"
+    }
+  ],
+  "id": 2232
+}

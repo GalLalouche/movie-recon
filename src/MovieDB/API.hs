@@ -52,3 +52,15 @@ castAndCrew m@(Movie mid _ _) = do
   return $ toCastAndCrew $ NEL.fromList ps where
     participations :: Movie -> [(Person, ParticipationType)] -> [Participation]
     participations movie = map aux where aux (p, pt) = Participation p movie pt
+
+newtype PersonCredits = PersonCredits { id :: PersonId }
+instance ApiQuery PersonCredits [(Movie, ParticipationType)] where
+  buildQuery (PersonCredits pid) = pack [i|person/#{pid}/credits|]
+  parse = P.parsePersonCredits
+
+personCredits :: Person -> ApiCall [Participation]
+personCredits p@(Person pid _) = do
+  ps <- runQuery $ PersonCredits pid
+  return $ map participations ps where
+    participations :: (Movie, ParticipationType) -> Participation
+    participations (m, pt) = Participation p m pt
