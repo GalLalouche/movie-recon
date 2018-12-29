@@ -40,8 +40,4 @@ data Participation = Participation
   { person :: Person
   , movie :: Movie
   , participationType :: ParticipationType
-  }
-
-newtype Query = Query
-  { query :: Text
-  }
+  } deriving (Show, Eq, Ord)

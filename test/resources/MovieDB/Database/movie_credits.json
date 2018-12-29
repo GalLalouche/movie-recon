@@ -1,0 +1,73 @@
+{
+  "id": 194662,
+  "cast": [
+    {
+      "cast_id": 2,
+      "character": "Riggan Thomson",
+      "credit_id": "52fe4cf29251416c91105647",
+      "gender": 2,
+      "id": 2232,
+      "name": "Michael Keaton",
+      "order": 0,
+      "profile_path": "/baeHNv3qrVsnApuKbZXiJOhqMnw.jpg"
+    },
+    {
+      "cast_id": 5,
+      "character": "Mike Shiner",
+      "credit_id": "52fe4cf29251416c91105653",
+      "gender": 2,
+      "id": 819,
+      "name": "Edward Norton",
+      "order": 1,
+      "profile_path": "/5XBzD5WuTyVQZeS4VI25z2moMeY.jpg"
+    },
+    {
+      "cast_id": 3,
+      "character": "Sam Thomson",
+      "credit_id": "52fe4cf29251416c9110564b",
+      "gender": 1,
+      "id": 54693,
+      "name": "Emma Stone",
+      "order": 2,
+      "profile_path": "/8bg84LTWsumtZitp1vwHJRFFkcr.jpg"
+    }
+  ],
+  "crew": [
+    {
+      "credit_id": "52fe4cf29251416c91105643",
+      "department": "Directing",
+      "gender": 2,
+      "id": 223,
+      "job": "Director",
+      "name": "Alejandro González Iñárritu",
+      "profile_path": "/qWrltG9e0ssM3Y9pF86EAgteKHu.jpg"
+    },
+    {
+      "credit_id": "52fe4cf29251416c91105661",
+      "department": "Writing",
+      "gender": 0,
+      "id": 1281196,
+      "job": "Screenplay",
+      "name": "Alexander Dinelaris",
+      "profile_path": null
+    },
+    {
+      "credit_id": "539a03d5c3a3682ace0003f2",
+      "department": "Writing",
+      "gender": 2,
+      "id": 223,
+      "job": "Screenplay",
+      "name": "Alejandro González Iñárritu",
+      "profile_path": "/qWrltG9e0ssM3Y9pF86EAgteKHu.jpg"
+    },
+    {
+      "credit_id": "539a03e3c3a3682ac20003e4",
+      "department": "Writing",
+      "gender": 2,
+      "id": 661870,
+      "job": "Screenplay",
+      "name": "Armando Bo",
+      "profile_path": "/e8JORtvATi3z68rhpKXPWkrzq8d.jpg"
+    }
+  ]
+}

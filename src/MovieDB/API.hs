@@ -1,35 +1,46 @@
-{-# LANGUAGE DuplicateRecordFields, ScopedTypeVariables, QuasiQuotes #-}
+{-# LANGUAGE DuplicateRecordFields, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE QuasiQuotes, ScopedTypeVariables                                                        #-}
 
 module MovieDB.API where
 
-import Entity hiding (Movie)
-import Data.Text (Text)
-import Common.Operators
-import Control.Monad ((>=>))
-import Control.Monad.Trans.Reader
-import Control.Monad.IO.Class (liftIO)
-import Network.HTTP (simpleHTTP, getRequest)
-import Data.String.Interpolate
+import           Common.JsonUtils           (fromSuccess)
+import           Common.Operators
+import           Common.Unsafe              (right)
 
-newtype PersonId = PersonId { id :: Text }
-newtype MovieId = MovieId { id :: Text }
+import           Control.Monad.IO.Class     (liftIO)
+import           Control.Monad.Trans.Reader (ReaderT, ask)
+
+import           Data.ByteString.Lazy.UTF8  (fromString)
+import           Data.String.Interpolate    (i)
+import           Data.Text                  (Text, pack)
+
+import qualified Data.Aeson                 as Aeson
+import qualified Data.Aeson.Types           as AesonT
+
+import qualified MovieDB.Parsers            as P
+import           MovieDB.Types              (MovieId(..), ParticipationType, Person)
+
+import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
+
 newtype ApiKey = ApiKey { key :: Text }
-data Movie = Movie { id :: MovieId, name :: Text}
 
 type ApiCall a = ReaderT ApiKey IO a
 
-searchPerson :: Text -> ApiCall PersonId
-searchPerson t = undefined
---do
---  apiKey <- ask <$$> key
---  let res = liftIO $ simpleHTTP (getRequest [i|https://api.themoviedb.org/3/search/person?api_key=#{key}&language=en-US&page=1&include_adult=false&query=#{t}|]) >>= fmap (take 100) . getResponseBody
---  undefined
+newtype MovieCredits = MovieCredits { movieId :: MovieId }
 
-movieIds :: PersonId -> ApiCall [MovieId]
-movieIds = undefined
+class ApiQuery q r | q -> r, r -> q where
+  buildQuery :: q -> Text
+  parse :: AesonT.Value -> AesonT.Parser r
 
-movieInfo :: MovieId -> ApiCall Movie
-movieInfo = undefined
+instance ApiQuery MovieCredits [(Person, ParticipationType)] where
+  buildQuery (MovieCredits mid) = pack [i|movie/#{mid}/credits|]
+  parse = P.parseMovieCredits
 
-movies :: PersonId -> ApiCall [Movie]
-movies = movieIds >=> traverse movieInfo
+runQuery :: ApiQuery q r => q -> ApiCall r
+runQuery q = do
+  apiKey <- ask <$$> key
+  let query = buildQuery q
+  let request = [i|https://api.themoviedb.org/3/#{query}?api_key=#{apiKey}&language=en-US|]
+  let res = simpleHTTP (getRequest request) >>= getResponseBody
+  json <- liftIO $ res <$$> (fromString .> Aeson.eitherDecode .> right) :: ApiCall Aeson.Value
+  return $ fromSuccess $ AesonT.parse parse json

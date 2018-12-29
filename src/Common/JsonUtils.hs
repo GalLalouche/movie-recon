@@ -1,22 +1,22 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-{-| A bunch of patently unsafe functions, since type-safe JSON is the way to madness. |-}
+{-| A bunch of patently unsafe functions, since type-safe/total JSON is the way to madness. |-}
 module Common.JsonUtils where
 
-import Data.Aeson (Value, Array, Object, withObject, withArray, decode, fromJSON, Result(..))
-import qualified Data.Aeson((.:))
-import Data.Vector (Vector)
-import Data.Aeson.Types (Parser, FromJSON)
+import           Data.Aeson                (Array, Object, Result(..), Value, decode, fromJSON, withArray,
+                                            withObject)
+import qualified Data.Aeson                as Aeson ((.:))
+import           Data.Aeson.Types          (FromJSON, Parser)
+import           Data.Vector               (Vector)
 
-import Data.Text (Text)
-import Data.ByteString.Lazy.UTF8 (ByteString, fromString)
-import Data.Text.Lazy.Encoding (encodeUtf8)
-import Data.Text.Lazy (fromStrict)
+import           Data.ByteString.Lazy.UTF8 (ByteString, fromString)
+import           Data.Text                 (Text)
+import           Data.Text.Lazy            (fromStrict)
+import           Data.Text.Lazy.Encoding   (encodeUtf8)
 
-import Common.Operators
-import Data.Traversable (traverse)
-import Data.Maybe (fromJust)
-import Control.Monad ((>=>), (<=<))
+import           Common.Operators
+import           Data.Maybe                (fromJust)
+import           Data.Traversable          (traverse)
 
 
 -- TODO move to common
@@ -39,7 +39,7 @@ asObject :: Value -> Parser Object
 asObject = withObject "object" return
 
 get :: FromJSON a => Text -> Object -> Parser a
-get = flip (Data.Aeson..:)
+get = flip (Aeson..:)
 
 int :: Text -> Object -> Parser Int
 int = get
@@ -58,4 +58,4 @@ objects = array >==> traverse asObject
 
 fromSuccess :: Result a -> a
 fromSuccess (Success a) = a
-fromSuccess (Error e) = error e
+fromSuccess (Error e)   = error e
