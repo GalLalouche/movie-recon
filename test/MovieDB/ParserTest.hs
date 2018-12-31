@@ -1,29 +1,30 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module MovieDB.ParserTest where
 
-import qualified MovieDB.Parsers      as P
-import           MovieDB.Types        (Participation(..), ParticipationType(..), Person(..), PersonId(..), Movie(..), MovieId(..))
+import qualified MovieDB.Parsers         as P
+import           MovieDB.Types           (Movie(..), MovieId(..), Participation(..), ParticipationType(..),
+                                          Person(..), PersonId(..))
 
-import qualified Data.Aeson           as Aeson
-import qualified Data.Aeson.Types     as AesonT
+import qualified Data.Aeson              as Aeson
+import qualified Data.Aeson.Types        as AesonT
 
-import           Data.ByteString.Lazy (readFile)
-import           Data.Set             (fromList)
-import           Data.Text            (Text, pack)
-import           Data.Time            (fromGregorian)
-import           Prelude              hiding (readFile)
+import           Data.ByteString.Lazy    (readFile)
+import           Data.Set                (fromList)
+import           Data.Text               (Text, pack)
+import           Data.Time               (fromGregorian)
+import           Prelude                 hiding (readFile)
 
-import           Common.JsonUtils     (fromSuccess)
-import           Common.Unsafe        (right)
+import           Common.JsonObjectParser (ObjectParser, parseObject)
+import           Common.JsonUtils        (decodeUnsafe, fromSuccess)
 
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
 
-parseJson :: (Aeson.Value -> AesonT.Parser a) -> FilePath -> IO a
+parseJson :: ObjectParser a -> FilePath -> IO a
 parseJson parser fileName = do
    json <- readFile $ "test/resources/MovieDB/Database/" ++ fileName ++ ".json"
-   return $ fromSuccess $ AesonT.parse parser (right $ Aeson.eitherDecode json)
+   return $ fromSuccess $ parseObject parser (decodeUnsafe json)
 
 test_MovieDB_parsers = testGroup "parseJson" [
     testCase "parseMovieCredits" $ do

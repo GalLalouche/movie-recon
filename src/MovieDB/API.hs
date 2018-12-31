@@ -3,7 +3,8 @@
 
 module MovieDB.API where
 
-import           Common.JsonUtils           (fromSuccess)
+import           Common.JsonObjectParser    (ObjectParser, fromValue, parseObject)
+import           Common.JsonUtils           (decodeUnsafe, fromSuccess)
 import           Common.Operators
 import           Common.Unsafe              (right)
 
@@ -15,8 +16,7 @@ import qualified Data.List.NonEmpty         as NEL
 import           Data.String.Interpolate    (i)
 import           Data.Text                  (Text, pack)
 
-import qualified Data.Aeson                 as Aeson
-import qualified Data.Aeson.Types           as AesonT
+import           Data.Aeson                 (Value)
 
 import qualified MovieDB.Parsers            as P
 import           MovieDB.Types              (CastAndCrew(..), Movie(..), MovieId, Participation(..),
@@ -30,7 +30,7 @@ type ApiCall a = ReaderT ApiKey IO a
 
 class ApiQuery q r | q -> r, r -> q where
   buildQuery :: q -> Text
-  parse :: AesonT.Value -> AesonT.Parser r
+  parse :: ObjectParser r
 
 runQuery :: ApiQuery q r => q -> ApiCall r
 runQuery q = do
@@ -38,8 +38,8 @@ runQuery q = do
   let query = buildQuery q
   let request = [i|https://api.themoviedb.org/3/#{query}?api_key=#{apiKey}&language=en-US|]
   let res = simpleHTTP (getRequest request) >>= getResponseBody
-  json <- liftIO $ res <$$> (fromString .> Aeson.eitherDecode .> right) :: ApiCall Aeson.Value
-  return $ fromSuccess $ AesonT.parse parse json
+  json <- liftIO $ res <$$> decodeUnsafe :: ApiCall Value
+  return $ fromSuccess $ parseObject parse json
 
 newtype MovieCredits = MovieCredits { id :: MovieId }
 instance ApiQuery MovieCredits [(Person, ParticipationType)] where
