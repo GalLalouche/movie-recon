@@ -16,8 +16,8 @@ data Person = Person
   , _name :: Text
   } deriving (Show, Eq, Ord)
 
-deepId :: Person -> Text
-deepId p = let personId = _id (p :: Person) in _id (personId :: PersonId)
+class HasDeepId a where
+  deepId :: a -> Text
 
 newtype MovieId = MovieId
   { _id :: Text
@@ -28,6 +28,12 @@ data Movie = Movie
   , _name :: Text
   , _date :: Day
   } deriving (Show, Eq, Ord)
+
+instance HasDeepId Movie where
+  deepId m = _id (_id (m :: Movie) :: MovieId)
+
+instance HasDeepId Person where
+  deepId p = _id (_id (p :: Person) :: PersonId)
 
 data CastAndCrew = CastAndCrew
   { movie :: Movie

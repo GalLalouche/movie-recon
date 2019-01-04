@@ -1,66 +1,54 @@
-{-# LANGUAGE DuplicateRecordFields, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
-{-# LANGUAGE QuasiQuotes, ScopedTypeVariables                                                        #-}
+module MovieDB.API(
+  I.ApiKey(..),
+  I.ApiQuery,
+  runQuery,
+  I.MovieCredits(..),
+  castAndCrew,
+  I.PersonCredits(..),
+  personCredits,
+) where
 
-module MovieDB.API where
+import qualified MovieDB.API.Internal       as I
 
-import           Common.JsonObjectParser    (ObjectParser, fromValue, parseObject)
+import           Common.JsonObjectParser    (ObjectParser, parseObject)
 import           Common.JsonUtils           (decodeUnsafe, fromSuccess)
 import           Common.Operators
-import           Common.Unsafe              (right)
 
 import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask)
 
-import           Data.ByteString.Lazy.UTF8  (fromString)
-import qualified Data.List.NonEmpty         as NEL
+import           Control.Lens               (classUnderscoreNoPrefixFields, makeLensesWith, view, (^.))
+
+import qualified Data.List.NonEmpty         as NEL (fromList)
 import           Data.String.Interpolate    (i)
-import           Data.Text                  (Text, pack)
+import           Data.Text                  (Text, pack, unpack)
 
 import           Data.Aeson                 (Value)
 
 import qualified MovieDB.Parsers            as P
-import           MovieDB.Types              (CastAndCrew(..), Movie(..), MovieId, Participation(..),
-                                             ParticipationType, Person(..), PersonId, toCastAndCrew)
+import           MovieDB.Types              (CastAndCrew(..), HasDeepId, Movie(..), MovieId,
+                                             Participation(..), ParticipationType, Person(..), PersonId,
+                                             deepId, toCastAndCrew)
 
 import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
 
-newtype ApiKey = ApiKey { key :: Text }
-
-type ApiCall a = ReaderT ApiKey IO a
-
-class ApiQuery q r | q -> r, r -> q where
-  buildQuery :: q -> Text
-  parse :: ObjectParser r
-
-runQuery :: ApiQuery q r => q -> ApiCall r
+runQuery :: I.ApiQuery q r => q -> I.ApiCall r
 runQuery q = do
-  apiKey <- ask <$$> key
-  let query = buildQuery q
-  let request = [i|https://api.themoviedb.org/3/#{query}?api_key=#{apiKey}&language=en-US|]
+  request <- ask <$$> I.apiPath q <$$> unpack
   let res = simpleHTTP (getRequest request) >>= getResponseBody
-  json <- liftIO $ res <$$> decodeUnsafe :: ApiCall Value
-  return $ fromSuccess $ parseObject parse json
+  json <- liftIO $ res <$$> decodeUnsafe :: I.ApiCall Value
+  return $ fromSuccess $ parseObject I.parse json
 
-newtype MovieCredits = MovieCredits { id :: MovieId }
-instance ApiQuery MovieCredits [(Person, ParticipationType)] where
-  buildQuery (MovieCredits mid) = pack [i|movie/#{mid}/credits|]
-  parse = P.parseMovieCredits
-
-castAndCrew :: Movie -> ApiCall CastAndCrew
-castAndCrew m@(Movie mid _ _) = do
-  ps <- participations m <$> runQuery (MovieCredits mid)
+castAndCrew :: Movie -> I.ApiCall CastAndCrew
+castAndCrew m = do
+  ps <- participations m <$> runQuery (I.forMovie m)
   return $ toCastAndCrew $ NEL.fromList ps where
     participations :: Movie -> [(Person, ParticipationType)] -> [Participation]
     participations movie = map aux where aux (p, pt) = Participation p movie pt
 
-newtype PersonCredits = PersonCredits { id :: PersonId }
-instance ApiQuery PersonCredits [(Movie, ParticipationType)] where
-  buildQuery (PersonCredits pid) = pack [i|person/#{pid}/credits|]
-  parse = P.parsePersonCredits
-
-personCredits :: Person -> ApiCall [Participation]
-personCredits p@(Person pid _) = do
-  ps <- runQuery $ PersonCredits pid
+personCredits :: Person -> I.ApiCall [Participation]
+personCredits p = do
+  ps <- runQuery $ I.forPerson p
   return $ map participations ps where
     participations :: (Movie, ParticipationType) -> Participation
     participations (m, pt) = Participation p m pt
