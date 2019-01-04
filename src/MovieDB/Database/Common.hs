@@ -51,5 +51,3 @@ insertOrVerify a = do
     assertSameOrThrow existingValue newValue =
       if existingValue == newValue then return ()
       else error [i|Existing value <#{existingValue}> was different from new value <#{newValue}>|]
-
-
