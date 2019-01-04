@@ -10,25 +10,19 @@ module MovieDB.API(
 
 import qualified MovieDB.API.Internal       as I
 
-import           Common.JsonObjectParser    (ObjectParser, parseObject)
+import           Common.JsonObjectParser    (parseObject)
 import           Common.JsonUtils           (decodeUnsafe, fromSuccess)
 import           Common.Operators
 
 import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask)
 
-import           Control.Lens               (classUnderscoreNoPrefixFields, makeLensesWith, view, (^.))
-
 import qualified Data.List.NonEmpty         as NEL (fromList)
-import           Data.String.Interpolate    (i)
-import           Data.Text                  (Text, pack, unpack)
+import           Data.Text                  (unpack)
 
-import           Data.Aeson                 (Value)
-
-import qualified MovieDB.Parsers            as P
-import           MovieDB.Types              (CastAndCrew(..), HasDeepId, Movie(..), MovieId,
-                                             Participation(..), ParticipationType, Person(..), PersonId,
-                                             deepId, toCastAndCrew)
+import           MovieDB.Types              (CastAndCrew(..), Movie(..),
+                                             Participation(..), ParticipationType, Person(..),
+                                             toCastAndCrew)
 
 import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
 
@@ -36,7 +30,7 @@ runQuery :: I.ApiQuery q r => q -> I.ApiCall r
 runQuery q = do
   request <- ask <$$> I.apiPath q <$$> unpack
   let res = simpleHTTP (getRequest request) >>= getResponseBody
-  json <- liftIO $ res <$$> decodeUnsafe :: I.ApiCall Value
+  json <- liftIO $ res <$$> decodeUnsafe
   return $ fromSuccess $ parseObject I.parse json
 
 castAndCrew :: Movie -> I.ApiCall CastAndCrew

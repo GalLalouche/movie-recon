@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module MovieDB.API.InternalTest where
 
-import MovieDB.API.Internal
-import MovieDB.Types
+import MovieDB.API.Internal (ApiKey(..), MovieCredits(..), PersonCredits(..), apiPath)
+import MovieDB.Types        (MovieId(..), PersonId(..))
 
 import Test.Tasty
 import Test.Tasty.HUnit
