@@ -1,8 +1,11 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, RankNTypes, InstanceSigs #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
 
 module Common.Operators where
 
-import Control.Monad ((>=>), (<=<))
+import           Control.Monad ((<=<), (>=>))
 
 (|>) :: a -> (a -> b) -> b
 x |> f = f x
@@ -63,7 +66,16 @@ infixr 1 >==> -- same priority as >=>
 
 (<==<) :: Monad m => (c -> m d) -> (a -> b -> m c) -> a -> b -> m d
 (<==<) = flip (>==>)
-infixr 1 <==< -- same priority as >=>
+infixr 1 <==< -- same priority as <=<
+
+-- fmap equivalent of the above
+(>$$>) :: Functor m => (a -> b -> m c) -> (c -> d) -> a -> b -> m d
+(>$$>) f g a = f a >$> g
+infixr 1 >$$> -- same priority as >$>
+
+(<$$<) :: Functor m => (c -> d) -> (a -> b -> m c) -> a -> b -> m d
+(<$$<) = flip (>$$>)
+infixr 1 <$$< -- same priority as <$<
 
 flip2 :: (a -> b -> c -> d) -> (b -> c -> a -> d)
 flip2 f b c a = f a b c

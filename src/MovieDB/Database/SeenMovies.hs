@@ -1,11 +1,15 @@
-{-# LANGUAGE FlexibleContexts, GADTs, GeneralizedNewtypeDeriving, MultiParamTypeClasses, QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell, TypeFamilies                                                           #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module MovieDB.Database.SeenMovies(
   init,
   clear,
   addSeenMovie,
-  removeSeenMovie,
   isSeen,
   removeSeenMovie,
 ) where

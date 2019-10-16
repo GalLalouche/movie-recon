@@ -1,21 +1,36 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, OverloadedStrings, QuasiQuotes, TemplateHaskell #-}
 
 {-| A bunch of patently unsafe functions, since type-safe/total JSON is the way to madness. |-}
-module Common.JsonUtils where
+module Common.JsonUtils(
+  ByteStringable(..),
+  decodeUnsafe,
+  asObject,
+  getMaybe,
+  get,
+  int,
+  strMaybe,
+  str,
+  strRead,
+  strReadMaybe,
+  array,
+  object,
+  objects,
+  fromSuccess,
+) where
 
-import           Data.Aeson                (Array, Object, Result(..), Value, decode, fromJSON, withArray,
-                                            withObject)
-import qualified Data.Aeson                as Aeson ((.:))
-import           Data.Aeson.Types          (FromJSON, Parser)
+import           Data.Aeson                (Array, Object, Result(..), Value, decode, withArray, withObject)
+import           Data.Aeson.Types          (FromJSON, Parser, parseFieldMaybe)
 import           Data.Vector               (Vector)
 
 import           Data.ByteString.Lazy.UTF8 (ByteString, fromString)
+import           Data.String.Interpolate   (i)
 import           Data.Text                 (Text, unpack)
 import           Data.Text.Lazy            (fromStrict)
 import           Data.Text.Lazy.Encoding   (encodeUtf8)
+import           Text.Read                 (readMaybe)
 
+import qualified Common.Maybes             as Maybes
 import           Common.Operators
-import           Data.Maybe                (fromJust)
 import           Data.Traversable          (traverse)
 
 
@@ -33,13 +48,20 @@ instance ByteStringable Text where
   toByteString = encodeUtf8 . fromStrict
 
 decodeUnsafe :: ByteStringable a => a -> Value
-decodeUnsafe = toByteString .> decode .> fromJust
+decodeUnsafe a = Maybes.orError [i|Could not decode <#{toByteString a}>|] (toByteString a |> decode)
 
 asObject :: Value -> Parser Object
 asObject = withObject "object" return
 
+orError :: Text -> (Text -> Object -> Parser (Maybe a)) -> Text -> Object -> Parser a
+orError action f = \t o -> f t o <$$> Maybes.orError (msg t o) where
+  msg field o = [i|Could not apply <#{action}> on text <#{field}> in object <#{o}>|]
+
+getMaybe :: FromJSON a => Text -> Object -> Parser (Maybe a)
+getMaybe = flip parseFieldMaybe
+
 get :: FromJSON a => Text -> Object -> Parser a
-get = flip (Aeson..:)
+get = orError "get" getMaybe
 
 int :: Text -> Object -> Parser Int
 int = get
@@ -47,8 +69,14 @@ int = get
 str :: Text -> Object -> Parser Text
 str = get
 
+strMaybe :: Text -> Object -> Parser (Maybe Text)
+strMaybe = getMaybe
+
+strReadMaybe :: Read a => Text -> Object -> Parser (Maybe a)
+strReadMaybe = str >$$> readMaybe . unpack
+
 strRead :: Read a => Text -> Object -> Parser a
-strRead t = str t >$> read . unpack
+strRead = orError "strRead" strReadMaybe
 
 array :: Text -> Object -> Parser Array
 array = get >==> withArray "array" return

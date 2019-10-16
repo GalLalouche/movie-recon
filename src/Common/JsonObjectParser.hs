@@ -1,23 +1,17 @@
 module Common.JsonObjectParser where
 
-import           Data.Aeson                (Array, Object, Result(..), Value, decode, fromJSON, withArray,
-                                            withObject)
-import qualified Data.Aeson                as Aeson
-import qualified Data.Aeson.Types                as AesonT
-import           Data.Aeson.Types          (FromJSON, Parser)
-import           Data.Vector               (Vector)
+import           Data.Aeson       (Array, Object, Result(..), Value)
+import qualified Data.Aeson       as Aeson
+import           Data.Aeson.Types (FromJSON, Parser)
+import qualified Data.Aeson.Types as AesonT
 
-import           Data.ByteString.Lazy.UTF8 (ByteString, fromString)
-import           Data.Maybe                (fromJust)
-import           Data.Text                 (Text, unpack)
-import           Data.Text.Lazy            (fromStrict)
-import           Data.Text.Lazy.Encoding   (encodeUtf8)
-import           Data.Traversable          (traverse)
+import           Data.Text        (Text)
+import           Data.Traversable (traverse)
+import           Data.Vector      (Vector)
 
-import           Control.Applicative
-import           Control.Monad             (ap, liftM, (>=>), join)
+import           Control.Monad    (ap, join, liftM, (>=>))
 
-import qualified Common.JsonUtils          as JU
+import qualified Common.JsonUtils as JU
 import           Common.Operators
 
 newtype ObjectParser a = ObjectParser { parse :: Object -> Parser a }
@@ -39,6 +33,9 @@ fromValue = (JU.asObject >=>) . parse
 parseObject :: ObjectParser a -> Value -> Result a
 parseObject = AesonT.parse . fromValue
 
+getMaybe :: FromJSON a => Text -> ObjectParser (Maybe a)
+getMaybe = ObjectParser . JU.getMaybe
+
 get :: FromJSON a => Text -> ObjectParser a
 get = ObjectParser . JU.get
 
@@ -48,8 +45,14 @@ int = ObjectParser . JU.int
 str :: Text -> ObjectParser Text
 str = ObjectParser . JU.str
 
+strMaybe :: Text -> ObjectParser (Maybe Text)
+strMaybe = ObjectParser . JU.strMaybe
+
 strRead :: Read a => Text -> ObjectParser a
 strRead = ObjectParser . JU.strRead
+
+strReadMaybe :: Read a => Text -> ObjectParser (Maybe a)
+strReadMaybe = ObjectParser . JU.strReadMaybe
 
 array :: Text -> ObjectParser Array
 array = ObjectParser . JU.array

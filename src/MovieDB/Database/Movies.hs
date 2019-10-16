@@ -1,6 +1,14 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs                #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, OverloadedStrings, QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell, TypeFamilies, UndecidableInstances                               #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 
 module MovieDB.Database.Movies(
@@ -20,18 +28,15 @@ import qualified Prelude                    (id, init)
 
 import           Common.Operators
 
-import           MovieDB.Database.Common    (DbCall(..), DbMaybe(..), DbPath(..), ExtractableId(..),
-                                             ReadOnlyDatabase(..), ReadWriteDatabase(..), getRowId, getValue,
-                                             insertOrVerify)
-import           MovieDB.Types              (Movie(..), MovieId(..), PersonId(..))
+import           MovieDB.Database.Common    (DbCall (..), DbMaybe (..), DbPath (..), ExtractableId (..), ReadOnlyDatabase (..), ReadWriteDatabase (..), getRowId, getValue, insertOrVerify)
+import           MovieDB.Types              (Movie (..), MovieId (..), PersonId (..))
 
-import           Common.MaybeTUtils         (just)
 import           Control.Arrow              ((&&&))
-import           Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith,
-                                             view, (^.))
+import           Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
 import           Control.Monad              (void)
 import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.Trans.Maybe  (MaybeT(..))
+import           Control.Monad.Trans.Class  (lift)
+import           Control.Monad.Trans.Maybe  (MaybeT (..))
 import           Control.Monad.Trans.Reader (ask)
 import           Data.Maybe                 (fromJust)
 import           Data.Text                  (Text)
@@ -94,7 +99,6 @@ instance MovieRowable Movie where toMovieRowId = insertOrVerify
 class MaybeMovieRowable a where
   toMaybeMovieRowId :: a -> DbMaybe MovieRowId
 instance MovieRowable m => MaybeMovieRowable m where
-  toMaybeMovieRowId m = just $ toMovieRowId m
+  toMaybeMovieRowId m = lift $ toMovieRowId m
 instance MaybeMovieRowable MovieId where
   toMaybeMovieRowId m = fst <$> valueAndRowId m
-

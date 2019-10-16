@@ -2,20 +2,17 @@
 
 module Common.MaybeTUtils where
 
-import Common.Operators
+import           Common.Operators
 
-import Control.Monad             ((>=>))
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
-import Data.List.NonEmpty        (NonEmpty(..))
-import qualified Data.Maybe as Maybe
-
--- A wrapper for MaybeT
-just :: Monad m => m a -> MaybeT m a
-just = MaybeT . (return <$>)
+import           Control.Monad             ((>=>))
+import           Control.Monad.Trans.Class (lift)
+import           Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
+import           Data.List.NonEmpty        (NonEmpty (..))
+import qualified Data.Maybe                as Maybe
 
 -- Returns Nothing if the list is empty, or Just of a non-empty list
 fromList :: Monad m => m [a] -> MaybeT m (NonEmpty a)
-fromList = just >=> cases .> return .> MaybeT where
+fromList = lift >=> cases .> return .> MaybeT where
   cases = \case
     []       -> Nothing
     (x : xs) -> return $ x :| xs
