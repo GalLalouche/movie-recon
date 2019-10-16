@@ -1,9 +1,11 @@
-*.iml
 *~
-.idea/*
-.stack-work/
 cabal.config
 keys
 movie-recon.cabal
 out/*
+db.*
+.*
+*.iml
+!/.gitignore
+*.lock
 
