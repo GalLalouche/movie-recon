@@ -2,14 +2,11 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE QuasiQuotes            #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TemplateHaskell        #-}
 
 module MovieDB.API.Internal where
-
-import           Debug.Trace
 
 import           Prelude                    hiding (id)
 
@@ -17,17 +14,14 @@ import           Common.JsonObjectParser    (ObjectParser)
 
 import           Control.Monad.Trans.Reader (ReaderT)
 
-import           Control.Lens               (classUnderscoreNoPrefixFields,
-                                             makeLensesWith, view, (^.))
+import           Control.Lens               (classUnderscoreNoPrefixFields, makeLensesWith, view, (^.))
 import           Data.Aeson                 (Object)
 
 import           Data.String.Interpolate    (i)
 import           Data.Text                  (Text, pack)
 
 import qualified MovieDB.Parsers            as P
-import           MovieDB.Types              (HasDeepId, Movie (..), MovieId,
-                                             ParticipationType, Person (..),
-                                             PersonId, deepId)
+import           MovieDB.Types              (HasDeepId, Movie (..), MovieId, ParticipationType, Person (..), PersonId, deepId)
 
 newtype ApiKey = ApiKey { key :: Text }
 
@@ -62,5 +56,4 @@ instance ApiQuery PersonCredits [(Movie, ParticipationType)] where
   parse = P.parsePersonCredits
 
 apiPath :: ApiQuery q r => q -> ApiKey -> Text
-apiPath q (ApiKey apiKey) =
-  traceShowId $ pack [i|http://api.themoviedb.org/3/#{buildQuery q}?api_key=#{apiKey}&language=en-US|]
+apiPath q (ApiKey apiKey) = pack [i|http://api.themoviedb.org/3/#{buildQuery q}?api_key=#{apiKey}&language=en-US|]

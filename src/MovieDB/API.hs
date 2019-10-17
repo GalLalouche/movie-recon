@@ -1,6 +1,7 @@
 module MovieDB.API(
   ApiCall,
   I.ApiKey(..),
+  readKey,
   I.ApiQuery,
   runQuery,
   I.MovieCredits(..),
@@ -20,12 +21,14 @@ import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask)
 
 import qualified Data.List.NonEmpty         as NEL (fromList)
-import           Data.Text                  (unpack)
+import           Data.Text                  (unpack, pack)
 
-import           MovieDB.Types              (CastAndCrew(..), Movie(..), Participation(..), ParticipationType,
-                                             Person(..), toCastAndCrew)
+import           MovieDB.Types              (CastAndCrew(..), Movie(..), Participation(..), ParticipationType, Person(..), toCastAndCrew)
 
 import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
+
+readKey :: IO I.ApiKey
+readKey = I.ApiKey . pack <$> readFile "keys/moviedb.txt"
 
 runQuery :: I.ApiQuery q r => q -> ApiCall r
 runQuery q = do

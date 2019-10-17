@@ -77,9 +77,6 @@ infixr 1 >$$> -- same priority as >$>
 (<$$<) = flip (>$$>)
 infixr 1 <$$< -- same priority as <$<
 
-flip2 :: (a -> b -> c -> d) -> (b -> c -> a -> d)
-flip2 f b c a = f a b c
-
 (<&>) :: Applicative m => m (a -> b) -> a -> m b
 f <&> x = f <*> pure x
 infixl 4 <&> -- same priority as <*>
