@@ -11,6 +11,7 @@ module MovieDB.Database.SeenMovies(
   clear,
   addSeenMovie,
   isSeen,
+  isNotSeen,
   removeSeenMovie,
 ) where
 
@@ -18,7 +19,7 @@ import Prelude                    hiding (init)
 
 import Common.Operators
 
-import MovieDB.Database.Common    (DbCall, path, getValueByRowId)
+import MovieDB.Database.Common    (DbCall, getValueByRowId, path)
 import MovieDB.Database.Movies    (MovieRowId, MovieRowable, toMovieRowId)
 import MovieDB.Types              (Movie)
 
@@ -26,7 +27,7 @@ import Control.Monad              ((>=>))
 import Control.Monad.Trans.Reader (ask)
 import Data.Maybe                 (isJust)
 
-import Database.Persist.Sql       (Filter, deleteBy, deleteWhere, getBy, insert, selectList, entityVal)
+import Database.Persist.Sql       (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
 import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
 import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
@@ -57,6 +58,9 @@ removeSeenMovie = toMovieRowId >=> (withMigration . deleteBy . UniqueMovieId)
 
 isSeen :: MovieRowable m => m -> DbCall Bool
 isSeen = toMovieRowId >=> (fmap isJust . withMigration . getBy . UniqueMovieId)
+
+isNotSeen :: MovieRowable m => m -> DbCall Bool
+isNotSeen = not <$< isSeen
 
 allSeenMovies :: DbCall [Movie]
 allSeenMovies = do

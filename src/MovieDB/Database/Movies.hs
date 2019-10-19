@@ -3,7 +3,6 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -16,6 +15,7 @@ module MovieDB.Database.Movies(
   clear,
   getValue,
   insertOrVerify,
+  allMovies,
   MovieRowId,
   MovieRowable,
   toMovieRowId,
@@ -28,7 +28,7 @@ import qualified Prelude                    (id, init)
 
 import           Common.Operators
 
-import           MovieDB.Database.Common    (DbCall (..), DbMaybe (..), DbPath (..), ExtractableId (..), ReadOnlyDatabase (..), ReadWriteDatabase (..), getRowId, getValue, insertOrVerify)
+import           MovieDB.Database.Common    (DbCall (..), DbMaybe (..), DbPath (..), ExtractableId (..), ReadOnlyDatabase (..), ReadWriteDatabase (..), getRowId, getValue, getValueByRowId, insertOrVerify)
 import           MovieDB.Types              (Movie (..), MovieId (..), PersonId (..))
 
 import           Control.Arrow              ((&&&))
@@ -42,7 +42,7 @@ import           Data.Maybe                 (fromJust)
 import           Data.Text                  (Text)
 import           Data.Time                  (Day)
 
-import           Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert)
+import           Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
 import           Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
 import           Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
@@ -76,8 +76,13 @@ init = withMigration $ return ()
 clear :: DbCall()
 clear = withMigration $ deleteWhere ([] :: [Filter MovieRow])
 
+passFilter = [] :: [Filter MovieRow]
+
 invertIso :: MovieRow -> Movie
 invertIso = view (from rowIso)
+
+allMovies :: DbCall [Movie]
+allMovies = fmap (invertIso . entityVal) <$> withMigration (selectList passFilter [])
 
 instance ExtractableId Movie MovieId where
   extractId = view id
@@ -86,7 +91,7 @@ instance ReadOnlyDatabase Movie MovieId MovieRowId where
   valueAndRowId movieId = MaybeT $ withMigration $ do
     result <- getBy $ UniqueMovieId $ movieId ^. id
     return $ result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId movieRowId = withMigration $ (invertIso . fromJust) <$> get movieRowId
+  getValueByRowId movieRowId = withMigration $ invertIso . fromJust <$> get movieRowId
 instance ReadWriteDatabase Movie MovieId MovieRowId where
   forceInsert = withMigration . insert . view rowIso
 

@@ -69,7 +69,7 @@ instance ReadOnlyDatabase Person PersonId PersonRowId where
   valueAndRowId personId = MaybeT $ withMigration $ do
     result <- getBy $ UniquePersonId $ personId ^. id
     return $  result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId personRowId = withMigration $ (invertIso . fromJust) <$> get personRowId
+  getValueByRowId personRowId = withMigration $ invertIso . fromJust <$> get personRowId
 instance ReadWriteDatabase Person PersonId PersonRowId where
   forceInsert = withMigration . insert . view rowIso
 

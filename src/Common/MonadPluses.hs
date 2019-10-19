@@ -1,13 +1,17 @@
 module Common.MonadPluses where
 
+
+import Control.Monad    (MonadPlus, mfilter)
+import Data.Maybe       (fromJust, isJust)
+
+import Common.Maybes    (fcheck)
 import Common.Operators
-
-import Data.Maybe    (isJust, fromJust)
-
-import Control.Monad (MonadPlus, mfilter)
 
 catMaybes :: MonadPlus m => m (Maybe a) -> m a
 catMaybes = fmap fromJust . mfilter isJust
 
 fmapMaybes :: MonadPlus m => (a -> Maybe b) -> m a -> m b
 fmapMaybes = catMaybes .: fmap
+
+traverseFilter :: (MonadPlus m, Traversable m, Applicative f) => (a -> f Bool) -> m a -> f (m a)
+traverseFilter = catMaybes <$$< traverse . fcheck
