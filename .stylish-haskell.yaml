@@ -173,7 +173,7 @@ steps:
       #   `{-#LANGUAGE #-}'.
       #
       # Default: vertical.
-      style: compact_line
+      style: vertical
 
       # Align affects alignment of closing pragma brackets.
       #
@@ -190,17 +190,17 @@ steps:
       remove_redundant: true
 
   # Replace tabs by spaces. This is disabled by default.
-  # - tabs:
+  - tabs:
   #     # Number of spaces to use for each tab. Default: 8, as specified by the
   #     # Haskell report.
-  #     spaces: 8
+      spaces: 2
 
   # Remove trailing whitespace
   - trailing_whitespace: {}
 
 # A common setting is the number of columns (parts of) code will be wrapped
 # to. Different steps take this into account. Default: 80.
-columns: 110
+columns: 500
 
 # By default, line endings are converted according to the OS. You can override
 # preferred format here.
