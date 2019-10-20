@@ -1,23 +1,34 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE QuasiQuotes           #-}
 
 import           Data.String.Interpolate          (i)
-import           Data.Text                        (Text, pack)
+import           Data.Text                        (Text, pack, splitOn)
 
 import           MovieDB.API                      (ApiKey(..), personCredits, readKey)
-import           MovieDB.Database.Common          (DbCall, DbPath(..))
+import           MovieDB.Database.Common          (DbPath(..))
 import qualified MovieDB.Database.FollowedPersons as FP
 import qualified MovieDB.Database.Movies          as M
 import qualified MovieDB.Database.Participations  as P
 import qualified MovieDB.Database.SeenMovies      as SM
-import           MovieDB.Types                    (Movie(..), MovieId(..), Person(..), PersonId(..))
+import           MovieDB.Types                    (Movie(..), MovieId(..), Participation(..), Person(..), PersonId(..))
+import qualified MovieDB.Types                    as Types
 
-import           Control.Monad                    ((>=>))
 import           Control.Monad.IO.Class           (liftIO)
-import           Control.Monad.Trans.Class        (lift)
+import           Control.Monad.Trans.Maybe        (runMaybeT)
 import           Control.Monad.Trans.Reader       (ReaderT, runReaderT)
+import           Data.Foldable                    (traverse_)
+import           Data.Functor                     (void)
 
+import           System.Console.CmdArgs           (argPos, def, help, typFile, (&=))
+import qualified System.Console.CmdArgs           as Cmd
+import           System.Console.CmdArgs.Implicit
+
+import           Common.Maybes                    (orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators
+import           Common.Traversables              (traverseFproduct)
 
 makePerson :: Text -> Text -> Person
 makePerson = Person . PersonId
@@ -43,11 +54,68 @@ getUnseenMovies = do
   movies <- withDbPath M.allMovies :: IO [Movie]
   traverseFilter (withDbPath . SM.isNotSeen) movies :: IO [Movie]
 
-mkStringMovies :: [Movie] -> String
-mkStringMovies = unlines . map aux where
-  aux (Movie (MovieId id) name date) = [i|#{name}, #{date}, (#{id})|]
+getFollowedParticipations :: Movie -> IO [Participation]
+getFollowedParticipations m = do
+  ps <- withDbPath $ P.getParticipationsForMovie m
+  traverseFilter isFollowed ps where
+    isFollowed :: Participation -> IO Bool
+    isFollowed = withDbPath . FP.isFollowed . person
+
+mkStringMovie (Movie (MovieId id) name date) = [i|#{id}\t#{name}\t#{date}|]
+
+mkStringMovieAndParticipations :: Movie -> [Participation] -> String
+mkStringMovieAndParticipations m ps = let
+    movieString = mkStringMovie m
+    participationString = map mkStringParticipation ps
+  in if null participationString then movieString else unlines $ movieString : participationString where
+  mkStringParticipation (Participation p _ pt) = let
+      maybeRole = case pt of
+        Types.Actor -> ""
+        e           -> [i| (#{e})|]
+      in [i|\t#{Types._name (p :: Person)}#{maybeRole}|]
+
+data Config = UpdateSeen { seenFile :: FilePath }
+            | GetUnseen {verbose :: Bool }
+            | UpdateIndex
+            | AddPerson { name :: String, id :: String }
+            deriving (Show, Cmd.Data, Cmd.Typeable, Eq)
+updateSeenConfig = UpdateSeen {seenFile = def &= typFile &= argPos 0} &=
+    help ("Reads a file of seen movie IDs to update seen movies.\n" ++
+          "Every line should start with an ID, and optionally more text separated by <TAB>(i.e., the output format of updateseen). Example line:\n" ++
+          "\"299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
+    )
+getUnseenConfig = GetUnseen { verbose = def &= help "If true, also prints the followed cast and crew for the film"}
+    &= help "Return all unseen movies, their release date, and their IDs."
+updateIndex = UpdateIndex &= help "Updates the index of movies for all followed persons."
+addPerson = AddPerson {name = def &= argPos 0, id = def &= argPos 1} &= help "Adds a followed person"
+
+parseSeenMovies :: FilePath -> IO ()
+parseSeenMovies f = do
+  ids <- fmap parseId . lines <$> readFile f
+  movies <- traverse getValueOrError ids
+  traverse_ (withDbPath . SM.addSeenMovie) movies
+  where
+    parseId :: String -> MovieId
+    parseId = MovieId . head . splitOn "\t" . pack
+    getValueOrError :: MovieId -> IO Movie
+    getValueOrError mid = do
+      m <- withDbPath $ runMaybeT $ M.getValue mid
+      return $ orError [i|Could not find movie with ID <#{mid}>|] m
+
+addFollowedPerson :: Person -> IO ()
+addFollowedPerson = void . withDbPath . FP.addFollowedPerson
 
 main :: IO ()
 main = do
-  movies <- getUnseenMovies
-  putStr $ mkStringMovies movies
+  args <- Cmd.cmdArgs $ modes [updateSeenConfig, getUnseenConfig, updateIndex, addPerson]
+  case args of
+    (GetUnseen v) -> do
+        movies <- getUnseenMovies
+        participations <- traverseFproduct getFollowedParticipations movies
+        let result = unlines $ if v then map (uncurry mkStringMovieAndParticipations) participations else map mkStringMovie movies
+        putStr result
+        return ()
+    (UpdateSeen file) -> parseSeenMovies file
+    UpdateIndex -> updateMoviesForAllFollowedPersons
+    (AddPerson name id) -> addFollowedPerson $ Person (PersonId $ pack id) (pack name)
+
