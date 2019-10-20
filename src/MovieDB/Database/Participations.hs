@@ -38,6 +38,7 @@ ParticipationRow
   personId  PersonRowId
   movieId   MovieRowId
   type      ParticipationType
+  ParticipationUniqueness personId movieId type
 |]
 
 withMigration action = do
