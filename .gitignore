@@ -8,4 +8,6 @@ db.*
 *.iml
 !/.gitignore
 *.lock
+*.txt
+*.sh
 
