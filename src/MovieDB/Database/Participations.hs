@@ -1,5 +1,11 @@
-{-# LANGUAGE DuplicateRecordFields, FlexibleContexts, GADTs, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses, QuasiQuotes, TemplateHaskell, TypeFamilies          #-}
+{-# LANGUAGE DuplicateRecordFields      #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module MovieDB.Database.Participations(
   init,
@@ -13,25 +19,25 @@ module MovieDB.Database.Participations(
   castAndCrew,
 ) where
 
-import           Prelude                          hiding (init)
+import Prelude                          hiding (init)
 
-import           Control.Monad.Trans.Reader       (ask)
+import Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
+import Control.Monad.Trans.Reader       (ask)
 
-import           Common.MaybeTUtils               (fromList)
-import           Common.Operators
+import Common.Foldables                 (mapHeadOrElse)
 
-import           MovieDB.Database.Common          (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
-import           MovieDB.Database.Movies          (MaybeMovieRowable, MovieRowId, MovieRowable,
-                                                   toMaybeMovieRowId, toMovieRowId)
-import qualified MovieDB.Database.ParticipationTH as TemplatesOnly
-import           MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
-import           MovieDB.Types                    (CastAndCrew, Movie, Participation(..),
-                                                   ParticipationType, Person, toCastAndCrew)
+import Common.MaybeTUtils               (fromList)
+import Common.Operators
 
-import           Database.Persist.Sql             (Filter, deleteWhere, entityVal, insert, selectList, (==.))
-import           Database.Persist.Sqlite          (runMigrationSilent, runSqlite)
-import           Database.Persist.TH              (derivePersistField, mkMigrate, mkPersist, persistLowerCase,
-                                                   share, sqlSettings)
+import MovieDB.Database.Common          (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
+import MovieDB.Database.Movies          (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import MovieDB.Database.ParticipationTH ()
+import MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
+import MovieDB.Types                    (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
+
+import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
+import Database.Persist.Sqlite          (runMigrationSilent, runSqlite)
+import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 ParticipationRow
@@ -52,8 +58,13 @@ init = withMigration $ return ()
 clear :: DbCall()
 clear = withMigration $ deleteWhere ([] :: [Filter ParticipationRow])
 
+getEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbMaybe ParticipationRowId
+getEntry = fmap entityKey . MaybeT . withMigration . getBy ..: ParticipationUniqueness
+
 addEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbCall ParticipationRowId
-addEntry = withMigration . insert ..: ParticipationRow
+addEntry p m pt = do
+  existingId <- runMaybeT $ getEntry p m pt
+  mapHeadOrElse return (withMigration $ insert $ ParticipationRow p m pt) existingId
 
 addValueEntry :: Participation -> DbCall ParticipationRowId
 addValueEntry (Participation person movie pt) = do
