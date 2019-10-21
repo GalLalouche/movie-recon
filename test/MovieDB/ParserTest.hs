@@ -1,16 +1,14 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module MovieDB.ParserTest where
 
 import qualified MovieDB.Parsers         as P
-import           MovieDB.Types           (Movie(..), MovieId(..), Participation(..), ParticipationType(..),
-                                          Person(..), PersonId(..))
-
-import qualified Data.Aeson              as Aeson
-import qualified Data.Aeson.Types        as AesonT
+import           MovieDB.Types           (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
 
 import           Data.ByteString.Lazy    (readFile)
 import           Data.Set                (fromList)
-import           Data.Text               (Text, pack)
+import           Data.Text               (pack)
 import           Data.Time               (fromGregorian)
 import           Prelude                 hiding (readFile)
 
@@ -50,4 +48,16 @@ test_MovieDB_parsers = testGroup "parseJson" [
             , movie 24053 "The Merry Gentleman" Director 2008 4 16
             ]
       fromList res @?= fromList expected
+  , testCase "parseName" $ do
+      res <- parseJson P.parsePersonName "person"
+      res @?= "Bradley Cooper"
+  ]
+
+test_URL_parsers = testGroup "parseId" [
+    testCase "starting with HTTP" $ do
+      let url = P.Url "https://www.themoviedb.org/person/1-george-lucas"
+      P.parseId url @?= PersonId "1"
+  , testCase "Not starting with HTTP" $ do
+      let url = P.Url "themoviedb.org/person/2-mark-hamill"
+      P.parseId url @?= PersonId "2"
   ]

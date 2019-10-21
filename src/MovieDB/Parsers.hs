@@ -1,28 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections     #-}
 
 module MovieDB.Parsers(
   parseMovieCredits,
   parsePersonCredits,
+  Url(..),
+  parseId,
+  parsePersonName,
 ) where
 
-import           Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
-import           Data.Foldable             (toList)
-import           Data.Maybe                (mapMaybe)
-import           Data.Semigroup            ((<>))
-import           Data.Text                 (Text, pack)
-import           Data.Time                 (Day)
+import Data.Foldable             (toList)
+import Data.Maybe                (mapMaybe)
+import Data.Semigroup            ((<>))
+import Data.Text                 (Text, pack, splitOn)
+import Data.Time                 (Day)
 
-import           Data.Aeson                (Object, Value)
-import           Data.Aeson.Types          (Parser)
+import Common.JsonObjectParser   (ObjectParser, int, str, strMaybe, strReadMaybe, withObjects)
+import Common.MonadPluses        (catMaybes)
+import Common.Operators
+import Common.Transes            ((>>=&), (>>=^))
 
-import           Common.JsonObjectParser   (ObjectParser, int, strMaybe, str, strReadMaybe, withObjects)
-import           Common.Transes            ((>>=^), (>>=&))
-import           Common.MonadPluses        (catMaybes)
-import           Common.Operators
-
-import           MovieDB.Types             (Movie (..), MovieId (..), ParticipationType (..), Person (..), PersonId (..))
+import MovieDB.Types             (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkPersonId)
 
 
 getId :: (Text -> a) -> ObjectParser a
@@ -52,3 +52,10 @@ parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
   parseMovie = MaybeMovie <$> getId MovieId <*> str "title" <*> strReadMaybe "release_date"
   liftMaybe :: (MaybeMovie, ParticipationType) -> Maybe (Movie, ParticipationType)
   liftMaybe (MaybeMovie id name d, pt) = fmap (\d -> (Movie id name d, pt)) d
+
+newtype Url = Url Text
+parseId :: Url -> PersonId
+parseId (Url url) = mkPersonId $ head $ splitOn "-" $ splitOn "/person/" url !! 1
+
+parsePersonName :: ObjectParser Text
+parsePersonName = str "name"

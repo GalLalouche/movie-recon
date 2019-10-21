@@ -1,18 +1,22 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE QuasiQuotes           #-}
 
 module MovieDB.Types where
 
-import Data.Text (Text)
-import Data.Time (Day)
-import Common.Maps (multiMapBy, monoidLookup)
-import Data.List.NonEmpty (NonEmpty((:|)))
+import Common.Maps             (monoidLookup, multiMapBy)
+import Data.List.NonEmpty      (NonEmpty((:|)))
+import Data.Maybe              (isJust)
+import Data.String.Interpolate (i)
+import Data.Text               (Text, unpack)
+import Data.Time               (Day)
+import Text.Regex              (matchRegex, mkRegex)
 
 newtype PersonId = PersonId
   { _id :: Text
   } deriving (Show, Eq, Ord)
 
 data Person = Person
-  { _id :: PersonId
+  { _id   :: PersonId
   , _name :: Text
   } deriving (Show, Eq, Ord)
 
@@ -24,7 +28,7 @@ newtype MovieId = MovieId
   } deriving (Show, Eq, Ord)
 
 data Movie = Movie
-  { _id :: MovieId
+  { _id   :: MovieId
   , _name :: Text
   , _date :: Day
   } deriving (Show, Eq, Ord)
@@ -36,19 +40,25 @@ instance HasDeepId Person where
   deepId p = _id (_id (p :: Person) :: PersonId)
 
 data CastAndCrew = CastAndCrew
-  { movie :: Movie
+  { movie     :: Movie
   , directors :: [Person]
-  , writers :: [Person]
-  , actors :: [Person]
+  , writers   :: [Person]
+  , actors    :: [Person]
   } deriving (Show, Eq, Ord)
 
 data ParticipationType = Director | Writer | Actor deriving (Show, Read, Eq, Ord)
 
 data Participation = Participation
-  { person :: Person
-  , movie :: Movie
+  { person            :: Person
+  , movie             :: Movie
   , participationType :: ParticipationType
   } deriving (Show, Eq, Ord)
+
+
+mkPersonId :: Text -> PersonId
+mkPersonId s = if matches s then PersonId s else error [i|<#{s}> Is not a valid Person ID|] where
+  matches = isJust . matchRegex digits . unpack
+  digits = mkRegex "^[0-9]+$"
 
 toCastAndCrew :: NonEmpty Participation -> CastAndCrew
 toCastAndCrew ps@(p :| _) = let

@@ -41,6 +41,7 @@ dependencies:
 - lens
 - time
 - cmdargs
+- regex-compat
 
 library:
   source-dirs: src

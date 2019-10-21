@@ -4,15 +4,16 @@
 {-# LANGUAGE QuasiQuotes           #-}
 
 import           Data.String.Interpolate          (i)
-import           Data.Text                        (Text, pack, splitOn)
+import           Data.Text                        (pack, splitOn)
 
-import           MovieDB.API                      (ApiKey(..), personCredits, readKey)
+import           MovieDB.API                      (ApiKey(..), personCredits, personName, readKey)
 import           MovieDB.Database.Common          (DbPath(..))
 import qualified MovieDB.Database.FollowedPersons as FP
 import qualified MovieDB.Database.Movies          as M
 import qualified MovieDB.Database.Participations  as P
 import qualified MovieDB.Database.SeenMovies      as SM
-import           MovieDB.Types                    (Movie(..), MovieId(..), Participation(..), Person(..), PersonId(..))
+import           MovieDB.Parsers                  (Url(..), parseId)
+import           MovieDB.Types                    (Movie(..), MovieId(..), Participation(..), Person(..))
 import qualified MovieDB.Types                    as Types
 
 import           Control.Monad.IO.Class           (liftIO)
@@ -21,7 +22,7 @@ import           Control.Monad.Trans.Reader       (ReaderT, runReaderT)
 import           Data.Foldable                    (traverse_)
 import           Data.Functor                     (void)
 
-import           System.Console.CmdArgs           (argPos, def, help, typFile, (&=))
+import           System.Console.CmdArgs           (argPos, def, help, typ, typFile, (&=))
 import qualified System.Console.CmdArgs           as Cmd
 import           System.Console.CmdArgs.Implicit
 
@@ -29,9 +30,6 @@ import           Common.Maybes                    (orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators
 import           Common.Traversables              (traverseFproduct)
-
-makePerson :: Text -> Text -> Person
-makePerson = Person . PersonId
 
 dbPath = DbPath "db.sqlite"
 
@@ -46,8 +44,7 @@ updateMoviesForAllFollowedPersons :: IO ()
 updateMoviesForAllFollowedPersons = do
   followedPersons <- withDbPath FP.allFollowedPersons
   participations <- withKey $ concat <$> traverse personCredits followedPersons
-  withDbPath $ traverse P.addValueEntry participations
-  return ()
+  void $ withDbPath $ traverse P.addValueEntry participations
 
 getUnseenMovies :: IO [Movie]
 getUnseenMovies = do
@@ -74,10 +71,10 @@ mkStringMovieAndParticipations m ps = let
         e           -> [i| (#{e})|]
       in [i|\t#{Types._name (p :: Person)}#{maybeRole}|]
 
-data Config = UpdateSeen { seenFile :: FilePath }
-            | GetUnseen {verbose :: Bool }
+data Config = UpdateSeen {seenFile :: FilePath}
+            | GetUnseen {verbose :: Bool}
             | UpdateIndex
-            | AddPerson { name :: String, id :: String }
+            | AddPerson {url :: String}
             deriving (Show, Cmd.Data, Cmd.Typeable, Eq)
 updateSeenConfig = UpdateSeen {seenFile = def &= typFile &= argPos 0} &=
     help ("Reads a file of seen movie IDs to update seen movies.\n" ++
@@ -87,7 +84,8 @@ updateSeenConfig = UpdateSeen {seenFile = def &= typFile &= argPos 0} &=
 getUnseenConfig = GetUnseen { verbose = def &= help "If true, also prints the followed cast and crew for the film"}
     &= help "Return all unseen movies, their release date, and their IDs."
 updateIndex = UpdateIndex &= help "Updates the index of movies for all followed persons."
-addPerson = AddPerson {name = def &= argPos 0, id = def &= argPos 1} &= help "Adds a followed person"
+addPerson = AddPerson {url = def &= argPos 0 &= typ "MovieDB URL, e.g., https://www.themoviedb.org/person/17697-john-krasinski"}
+    &= help "Adds a followed person"
 
 parseSeenMovies :: FilePath -> IO ()
 parseSeenMovies f = do
@@ -102,8 +100,16 @@ parseSeenMovies f = do
       m <- withDbPath $ runMaybeT $ M.getValue mid
       return $ orError [i|Could not find movie with ID <#{mid}>|] m
 
-addFollowedPerson :: Person -> IO ()
-addFollowedPerson = void . withDbPath . FP.addFollowedPerson
+addFollowedPerson :: String -> IO ()
+addFollowedPerson url = do
+  let id = parseId $ Url $ pack url
+  name <- withKey $ personName id
+  _ <- putStrLn [i|Adding <#{name}> and their credits...|]
+  let person = Person {_id = id, _name = name}
+  _ <- withDbPath $ FP.addFollowedPerson person
+  participations <- withKey $ personCredits person
+  traverse_ (withDbPath . P.addValueEntry) participations
+
 
 main :: IO ()
 main = do
@@ -117,5 +123,5 @@ main = do
         return ()
     (UpdateSeen file) -> parseSeenMovies file
     UpdateIndex -> updateMoviesForAllFollowedPersons
-    (AddPerson name id) -> addFollowedPerson $ Person (PersonId $ pack id) (pack name)
+    (AddPerson url) -> addFollowedPerson url
 

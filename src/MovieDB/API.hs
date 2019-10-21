@@ -8,6 +8,7 @@ module MovieDB.API(
   castAndCrew,
   I.PersonCredits(..),
   personCredits,
+  personName,
 ) where
 
 import           MovieDB.API.Internal       (ApiCall)
@@ -21,9 +22,9 @@ import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask)
 
 import qualified Data.List.NonEmpty         as NEL (fromList)
-import           Data.Text                  (unpack, pack)
+import           Data.Text                  (Text, unpack, pack)
 
-import           MovieDB.Types              (CastAndCrew(..), Movie(..), Participation(..), ParticipationType, Person(..), toCastAndCrew)
+import           MovieDB.Types              (CastAndCrew(..), Movie(..), Participation(..), ParticipationType, Person(..), PersonId(..), toCastAndCrew)
 
 import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
 
@@ -50,3 +51,7 @@ personCredits p = do
   return $ map participations ps where
     participations :: (Movie, ParticipationType) -> Participation
     participations (m, pt) = Participation p m pt
+    
+
+personName :: PersonId -> ApiCall Text
+personName = runQuery . I.personName

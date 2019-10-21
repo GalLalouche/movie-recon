@@ -2,6 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE QuasiQuotes            #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TemplateHaskell        #-}
@@ -14,14 +15,13 @@ import           Common.JsonObjectParser    (ObjectParser)
 
 import           Control.Monad.Trans.Reader (ReaderT)
 
-import           Control.Lens               (classUnderscoreNoPrefixFields, makeLensesWith, view, (^.))
-import           Data.Aeson                 (Object)
+import           Control.Lens               (classUnderscoreNoPrefixFields, makeLensesWith, view)
 
 import           Data.String.Interpolate    (i)
 import           Data.Text                  (Text, pack)
 
 import qualified MovieDB.Parsers            as P
-import           MovieDB.Types              (HasDeepId, Movie (..), MovieId, ParticipationType, Person (..), PersonId, deepId)
+import           MovieDB.Types              (HasDeepId, Movie(..), MovieId, ParticipationType, Person(..), PersonId(..), deepId)
 
 newtype ApiKey = ApiKey { key :: Text }
 
@@ -51,9 +51,19 @@ instance HasDeepId PersonCredits where deepId = view $ id . id
 forPerson :: Person -> PersonCredits
 forPerson = PersonCredits . view id
 
+
 instance ApiQuery PersonCredits [(Movie, ParticipationType)] where
   buildQuery p = pack [i|person/#{deepId p}/movie_credits|]
   parse = P.parsePersonCredits
+
+newtype PersonName = PersonName { _id :: PersonId }
+makeLensesWith classUnderscoreNoPrefixFields ''PersonName
+instance HasDeepId PersonName where deepId = view $ id . id
+instance ApiQuery PersonName Text where
+  buildQuery name = pack [i|person/#{deepId name}|]
+  parse = P.parsePersonName
+personName :: PersonId -> PersonName
+personName = PersonName
 
 apiPath :: ApiQuery q r => q -> ApiKey -> Text
 apiPath q (ApiKey apiKey) = pack [i|http://api.themoviedb.org/3/#{buildQuery q}?api_key=#{apiKey}&language=en-US|]
