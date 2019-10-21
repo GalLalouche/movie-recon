@@ -23,28 +23,25 @@ module MovieDB.Database.Movies(
   toMaybeMovieRowId,
 ) where
 
-import           Prelude                    hiding (id, init)
-import qualified Prelude                    (id, init)
+import Prelude                    hiding (id, init)
 
-import           Common.Operators
+import Common.Operators
 
-import           MovieDB.Database.Common    (DbCall (..), DbMaybe (..), DbPath (..), ExtractableId (..), ReadOnlyDatabase (..), ReadWriteDatabase (..), getRowId, getValue, getValueByRowId, insertOrVerify)
-import           MovieDB.Types              (Movie (..), MovieId (..), PersonId (..))
+import MovieDB.Database.Common    (DbCall, DbMaybe, DbPath(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
+import MovieDB.Types              (Movie(..), MovieId(..))
 
-import           Control.Arrow              ((&&&))
-import           Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
-import           Control.Monad              (void)
-import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.Trans.Class  (lift)
-import           Control.Monad.Trans.Maybe  (MaybeT (..))
-import           Control.Monad.Trans.Reader (ask)
-import           Data.Maybe                 (fromJust)
-import           Data.Text                  (Text)
-import           Data.Time                  (Day)
+import Control.Arrow              ((&&&))
+import Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
+import Control.Monad.Trans.Class  (lift)
+import Control.Monad.Trans.Maybe  (MaybeT(..))
+import Control.Monad.Trans.Reader (ask)
+import Data.Maybe                 (fromJust)
+import Data.Text                  (Text)
+import Data.Time                  (Day)
 
-import           Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
-import           Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
-import           Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
+import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
+import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 MovieRow

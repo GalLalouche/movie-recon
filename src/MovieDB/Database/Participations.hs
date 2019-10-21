@@ -19,25 +19,25 @@ module MovieDB.Database.Participations(
   castAndCrew,
 ) where
 
-import Prelude                          hiding (init)
+import Prelude                    hiding (init)
 
-import Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
-import Control.Monad.Trans.Reader       (ask)
+import Control.Monad.Trans.Maybe  (MaybeT(..), runMaybeT)
+import Control.Monad.Trans.Reader (ask)
 
-import Common.Foldables                 (mapHeadOrElse)
+import Common.Foldables           (mapHeadOrElse)
 
-import Common.MaybeTUtils               (fromList)
+import Common.MaybeTUtils         (fromList)
 import Common.Operators
 
-import MovieDB.Database.Common          (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
-import MovieDB.Database.Movies          (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import MovieDB.Database.ParticipationTH ()
-import MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
-import MovieDB.Types                    (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
+import MovieDB.Database.Common    (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
+import MovieDB.Database.Movies    (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import MovieDB.Database.Persons   (PersonRowId, PersonRowable, toPersonRowId)
+import MovieDB.Database.TypesTH   ()
+import MovieDB.Types              (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
-import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
-import Database.Persist.Sqlite          (runMigrationSilent, runSqlite)
-import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
+import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
+import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 ParticipationRow

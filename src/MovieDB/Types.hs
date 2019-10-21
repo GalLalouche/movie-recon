@@ -1,7 +1,22 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-module MovieDB.Types where
+module MovieDB.Types(
+  PersonId(..),
+  Person(..),
+  HasDeepId(..),
+  MovieId(..),
+  Movie(..),
+  FilterReason(..),
+  FilteredMovie(..),
+  CastAndCrew(..),
+  ParticipationType(..),
+  Participation(..),
+  mkPersonId,
+  mkMovieId,
+  toCastAndCrew,
+) where
 
 import Common.Maps             (monoidLookup, multiMapBy)
 import Data.List.NonEmpty      (NonEmpty((:|)))
@@ -33,6 +48,12 @@ data Movie = Movie
   , _date :: Day
   } deriving (Show, Eq, Ord)
 
+data FilterReason = Ignored | Seen deriving (Show, Read, Eq, Ord)
+data FilteredMovie = FilteredMovie
+  { _movie  :: Movie
+  , _reason :: FilterReason
+  } deriving (Show, Eq, Ord)
+
 instance HasDeepId Movie where
   deepId m = _id (_id (m :: Movie) :: MovieId)
 
@@ -55,10 +76,17 @@ data Participation = Participation
   } deriving (Show, Eq, Ord)
 
 
+
+checkValidId :: Text -> (Text -> a) -> Text -> a
+checkValidId name ctor s = if isValidId s then ctor s else error [i|<#{s}> Is not a valid #{name} ID|] where
+  isValidId = isJust . matchRegex digitsOnly . unpack
+  digitsOnly = mkRegex "^[0-9]+$"
+
 mkPersonId :: Text -> PersonId
-mkPersonId s = if matches s then PersonId s else error [i|<#{s}> Is not a valid Person ID|] where
-  matches = isJust . matchRegex digits . unpack
-  digits = mkRegex "^[0-9]+$"
+mkPersonId = checkValidId "Person" PersonId
+
+mkMovieId :: Text -> MovieId
+mkMovieId = checkValidId "Movie" MovieId
 
 toCastAndCrew :: NonEmpty Participation -> CastAndCrew
 toCastAndCrew ps@(p :| _) = let
@@ -69,4 +97,3 @@ toCastAndCrew ps@(p :| _) = let
     writers = getAll Writer
     actors = getAll Actor
   in CastAndCrew { movie = m, directors = directors, writers = writers, actors = actors }
-

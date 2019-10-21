@@ -4,16 +4,16 @@
 {-# LANGUAGE QuasiQuotes           #-}
 
 import           Data.String.Interpolate          (i)
-import           Data.Text                        (pack, splitOn)
+import           Data.Text                        (pack, splitOn, unpack)
 
 import           MovieDB.API                      (ApiKey(..), personCredits, personName, readKey)
 import           MovieDB.Database.Common          (DbPath(..))
+import qualified MovieDB.Database.FilteredMovies  as FM
 import qualified MovieDB.Database.FollowedPersons as FP
 import qualified MovieDB.Database.Movies          as M
 import qualified MovieDB.Database.Participations  as P
-import qualified MovieDB.Database.SeenMovies      as SM
 import           MovieDB.Parsers                  (Url(..), parseId)
-import           MovieDB.Types                    (Movie(..), MovieId(..), Participation(..), Person(..))
+import           MovieDB.Types                    (Movie(..), MovieId(..), Participation(..), Person(..), FilteredMovie(..), mkMovieId)
 import qualified MovieDB.Types                    as Types
 
 import           Control.Monad.IO.Class           (liftIO)
@@ -49,7 +49,7 @@ updateMoviesForAllFollowedPersons = do
 getUnseenMovies :: IO [Movie]
 getUnseenMovies = do
   movies <- withDbPath M.allMovies :: IO [Movie]
-  traverseFilter (withDbPath . SM.isNotSeen) movies :: IO [Movie]
+  traverseFilter (withDbPath . FM.isNotFiltered) movies :: IO [Movie]
 
 getFollowedParticipations :: Movie -> IO [Participation]
 getFollowedParticipations m = do
@@ -78,8 +78,8 @@ data Config = UpdateSeen {seenFile :: FilePath}
             deriving (Show, Cmd.Data, Cmd.Typeable, Eq)
 updateSeenConfig = UpdateSeen {seenFile = def &= typFile &= argPos 0} &=
     help ("Reads a file of seen movie IDs to update seen movies.\n" ++
-          "Every line should start with an ID, and optionally more text separated by <TAB>(i.e., the output format of updateseen). Example line:\n" ++
-          "\"299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
+          "Every line should start with an I or S (Ignored or Seen), followed by an ID, and optionally more text separated by <TAB>. Example line:\n" ++
+          "\"S299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
     )
 getUnseenConfig = GetUnseen { verbose = def &= help "If true, also prints the followed cast and crew for the film"}
     &= help "Return all unseen movies, their release date, and their IDs."
@@ -89,12 +89,15 @@ addPerson = AddPerson {url = def &= argPos 0 &= typ "MovieDB URL, e.g., https://
 
 parseSeenMovies :: FilePath -> IO ()
 parseSeenMovies f = do
-  ids <- fmap parseId . lines <$> readFile f
-  movies <- traverse getValueOrError ids
-  traverse_ (withDbPath . SM.addSeenMovie) movies
+  movies <- traverse parse =<< lines <$> readFile f
+  traverse_ (withDbPath . FM.addFilteredMovie) movies
   where
-    parseId :: String -> MovieId
-    parseId = MovieId . head . splitOn "\t" . pack
+    parse :: String -> IO FilteredMovie
+    parse line = do
+      let (r : id) = unpack $ head $ splitOn "\t" $ pack line
+      let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [i|Unsupported prefix <#{r}>|]
+      movie <- getValueOrError $ mkMovieId $ pack id
+      return $ FilteredMovie movie reason
     getValueOrError :: MovieId -> IO Movie
     getValueOrError mid = do
       m <- withDbPath $ runMaybeT $ M.getValue mid
@@ -124,4 +127,3 @@ main = do
     (UpdateSeen file) -> parseSeenMovies file
     UpdateIndex -> updateMoviesForAllFollowedPersons
     (AddPerson url) -> addFollowedPerson url
-
