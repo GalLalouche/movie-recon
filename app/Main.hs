@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
@@ -22,9 +21,7 @@ import           Control.Monad.Trans.Reader       (ReaderT, runReaderT)
 import           Data.Foldable                    (traverse_)
 import           Data.Functor                     (void)
 
-import           System.Console.CmdArgs           (argPos, def, help, typ, typFile, (&=))
-import qualified System.Console.CmdArgs           as Cmd
-import           System.Console.CmdArgs.Implicit
+import qualified Config
 
 import           Common.Maybes                    (orError)
 import           Common.MonadPluses               (traverseFilter)
@@ -35,7 +32,6 @@ dbPath = DbPath "db.sqlite"
 
 withKey :: ReaderT ApiKey IO a -> IO a
 withKey r = liftIO readKey >>= runReaderT r
-
 
 withDbPath :: Monad m => ReaderT DbPath m a -> m a
 withDbPath = flip runReaderT dbPath
@@ -71,22 +67,6 @@ mkStringMovieAndParticipations m ps = let
         e           -> [i| (#{e})|]
       in [i|\t#{Types._name (p :: Person)}#{maybeRole}|]
 
-data Config = UpdateSeen {seenFile :: FilePath}
-            | GetUnseen {verbose :: Bool}
-            | UpdateIndex
-            | AddPerson {url :: String}
-            deriving (Show, Cmd.Data, Cmd.Typeable, Eq)
-updateSeenConfig = UpdateSeen {seenFile = def &= typFile &= argPos 0} &=
-    help ("Reads a file of seen movie IDs to update seen movies.\n" ++
-          "Every line should start with an I or S (Ignored or Seen), followed by an ID, and optionally more text separated by <TAB>. Example line:\n" ++
-          "\"S299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
-    )
-getUnseenConfig = GetUnseen { verbose = def &= help "If true, also prints the followed cast and crew for the film"}
-    &= help "Return all unseen movies, their release date, and their IDs."
-updateIndex = UpdateIndex &= help "Updates the index of movies for all followed persons."
-addPerson = AddPerson {url = def &= argPos 0 &= typ "MovieDB URL, e.g., https://www.themoviedb.org/person/17697-john-krasinski"}
-    &= help "Adds a followed person"
-
 parseSeenMovies :: FilePath -> IO ()
 parseSeenMovies f = do
   movies <- traverse parse =<< lines <$> readFile f
@@ -116,14 +96,13 @@ addFollowedPerson url = do
 
 main :: IO ()
 main = do
-  args <- Cmd.cmdArgs $ modes [updateSeenConfig, getUnseenConfig, updateIndex, addPerson]
+  args <- Config.parseConfig
   case args of
-    (GetUnseen v) -> do
+    (Config.GetUnseen v) -> do
         movies <- getUnseenMovies
         participations <- traverseFproduct getFollowedParticipations movies
         let result = unlines $ if v then map (uncurry mkStringMovieAndParticipations) participations else map mkStringMovie movies
         putStr result
-        return ()
-    (UpdateSeen file) -> parseSeenMovies file
-    UpdateIndex -> updateMoviesForAllFollowedPersons
-    (AddPerson url) -> addFollowedPerson url
+    (Config.UpdateSeen file) -> parseSeenMovies file
+    Config.UpdateIndex -> updateMoviesForAllFollowedPersons
+    (Config.AddPerson url) -> addFollowedPerson url
