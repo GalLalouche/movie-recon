@@ -1,57 +1,60 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module MovieDB.API(
+  ApiKey(..),
   ApiCall,
-  I.ApiKey(..),
   readKey,
-  I.ApiQuery,
-  runQuery,
-  I.MovieCredits(..),
+
   castAndCrew,
-  I.PersonCredits(..),
   personCredits,
   personName,
 ) where
 
-import           MovieDB.API.Internal       (ApiCall)
-import qualified MovieDB.API.Internal       as I
-
-import           Common.JsonObjectParser    (parseObject)
-import           Common.JsonUtils           (decodeUnsafe, fromSuccess)
+import           Common.JsonObjectParser    (ObjectParser, parseObject)
+import qualified Common.JsonUtils           as JU (decodeUnsafe, fromSuccess)
 import           Common.Operators
 
 import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, ask)
 
 import qualified Data.List.NonEmpty         as NEL (fromList)
-import           Data.Text                  (Text, unpack, pack)
+import           Data.String.Interpolate    (i)
+import           Data.Text                  (Text, pack)
 
-import           MovieDB.Types              (CastAndCrew(..), Movie(..), Participation(..), ParticipationType, Person(..), PersonId(..), toCastAndCrew)
+import qualified MovieDB.Parsers            as P
+import           MovieDB.Types              (CastAndCrew(..), Movie(..), Participation(..), ParticipationType, Person(..), PersonId(..), deepId, toCastAndCrew)
 
 import           Network.HTTP               (getRequest, getResponseBody, simpleHTTP)
 
-readKey :: IO I.ApiKey
-readKey = I.ApiKey . pack <$> readFile "keys/moviedb.txt"
 
-runQuery :: I.ApiQuery q r => q -> ApiCall r
-runQuery q = do
-  request <- ask <$$> I.apiPath q <$$> unpack
-  let res = simpleHTTP (getRequest request) >>= getResponseBody
-  json <- liftIO $ res <$$> decodeUnsafe
-  return $ fromSuccess $ parseObject I.parse json
+newtype ApiKey = ApiKey { key :: Text }
+type ApiCall a = ReaderT ApiKey IO a
+
+readKey :: IO ApiKey
+readKey = ApiKey . pack <$> readFile "keys/moviedb.txt"
 
 castAndCrew :: Movie -> ApiCall CastAndCrew
-castAndCrew m = do
-  ps <- participations m <$> runQuery (I.forMovie m)
-  return $ toCastAndCrew $ NEL.fromList ps where
-    participations :: Movie -> [(Person, ParticipationType)] -> [Participation]
-    participations movie = map aux where aux (p, pt) = Participation p movie pt
+castAndCrew m = getParticipations (flip Participation m) [i|movie/#{deepId m}/credits|] P.parseMovieCredits <$$>
+    toCastAndCrew . NEL.fromList
 
 personCredits :: Person -> ApiCall [Participation]
-personCredits p = do
-  ps <- runQuery $ I.forPerson p
-  return $ map participations ps where
-    participations :: (Movie, ParticipationType) -> Participation
-    participations (m, pt) = Participation p m pt
-    
+personCredits p = getParticipations (Participation p) [i|person/#{deepId p}/movie_credits|] P.parsePersonCredits
 
 personName :: PersonId -> ApiCall Text
-personName = runQuery . I.personName
+personName (PersonId pid) = runQuery [i|person/#{pid}|] P.parsePersonName
+
+
+runQuery :: String -> ObjectParser r -> ApiCall r
+runQuery query parser = do
+  (ApiKey key) <- ask
+  let request = [i|http://api.themoviedb.org/3/#{query}?api_key=#{key}&language=en-US|]
+  let responseBody = simpleHTTP (getRequest request) >>= getResponseBody
+  json <- liftIO $ JU.decodeUnsafe <$> responseBody
+  return $ JU.fromSuccess $ parseObject parser json
+
+getParticipations ::
+    (b -> ParticipationType -> Participation)
+    -> String
+    -> ObjectParser [(b, ParticipationType)]
+    -> ApiCall [Participation]
+getParticipations toParticipations = runQuery >$$> map (uncurry toParticipations)
