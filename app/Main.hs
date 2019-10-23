@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TupleSections         #-}
 
@@ -28,6 +27,6 @@ main = do
   args <- Config.parseConfig
   case args of
     (Config.GetUnseen verbose) -> withDbPath $ Actions.getFormattedUnseenMovies verbose
-    (Config.UpdateSeen file)   -> withDbPath $ Actions.parseSeenMovies file
+    Config.UpdateSeen          -> withDbPath Actions.parseSeenMovies
     Config.UpdateIndex         -> withBoth Actions.updateMoviesForAllFollowedPersons
     (Config.AddPerson url)     -> withBoth $ Actions.addFollowedPerson url

@@ -9,18 +9,18 @@ import System.Console.CmdArgs.Implicit
 
 
 data Config =
-    UpdateSeen {seenFile :: FilePath}
+    UpdateSeen
     | GetUnseen {verbose :: Bool}
     | UpdateIndex
     | AddPerson {url :: String}
     deriving (Show, Data, Typeable, Eq)
 
-    help ("Reads a file of seen movie IDs to update seen movies.\n" ++
-updateSeen = UpdateSeen {seenFile = def &= typFile &= argPConfigos 0} &=
-          "Every line should start with an I or S (Ignored or Seen), followed by an ID, " ++
-          "and optionally more text separated by <TAB>. Example line:\n" ++
-          "\"S299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
-    )
+updateSeen = UpdateSeen &= help (
+    "Reads a list of seen movie IDs to update seen movies from stdin.\n" ++
+    "Every line should start with an I or S (Ignored or Seen), followed by an ID, " ++
+    "and optionally more text separated by <TAB>. Example line:\n" ++
+    "\"S299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
+  )
 getUnseen = GetUnseen { verbose = def &=
     help "If true, also prints the followed cast and crew for the film"
     } &= help "Return all unseen movies, their release date, and their IDs."

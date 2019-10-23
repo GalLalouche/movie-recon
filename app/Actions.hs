@@ -61,10 +61,9 @@ addFollowedPerson url = do
   participations <- withKey $ personCredits person
   traverse_ (withDbPath . P.addValueEntry) participations
 
---TODO parse from stdin, not from a file
-parseSeenMovies :: FilePath -> DbCall ()
-parseSeenMovies f = do
-  ls <- lines <$> liftIO (readFile f)
+parseSeenMovies :: DbCall ()
+parseSeenMovies = do
+  ls <- lines <$> liftIO getContents
   movies <- traverse parse ls
   traverse_ FM.addFilteredMovie movies
   where
