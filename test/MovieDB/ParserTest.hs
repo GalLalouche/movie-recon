@@ -21,7 +21,7 @@ import           Test.Tasty.HUnit
 
 parseJson :: ObjectParser a -> FilePath -> IO a
 parseJson parser fileName = do
-   json <- readFile $ "test/resources/MovieDB/Database/" ++ fileName ++ ".json"
+   json <- readFile $ "test/resources/MovieDB/" ++ fileName ++ ".json"
    return $ JU.fromSuccess $ parseObject parser (JU.decodeUnsafe json)
 
 test_MovieDB_parsers = testGroup "parseJson" [
