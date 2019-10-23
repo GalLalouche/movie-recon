@@ -1,18 +1,16 @@
 module Common.JsonObjectParser where
 
-import           Data.Aeson       (Array, Object, Result(..), Value)
-import qualified Data.Aeson       as Aeson
+import           Data.Aeson       (Array, Object, Result, Value)
 import           Data.Aeson.Types (FromJSON, Parser)
 import qualified Data.Aeson.Types as AesonT
 
 import           Data.Text        (Text)
-import           Data.Traversable (traverse)
 import           Data.Vector      (Vector)
 
 import           Control.Monad    (ap, join, liftM, (>=>))
 
 import qualified Common.JsonUtils as JU
-import           Common.Operators
+
 
 newtype ObjectParser a = ObjectParser { parse :: Object -> Parser a }
 instance Functor ObjectParser where

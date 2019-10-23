@@ -5,7 +5,8 @@
 
 module Common.Operators where
 
-import           Control.Monad ((<=<), (>=>))
+import           Control.Monad ((>=>))
+
 
 (|>) :: a -> (a -> b) -> b
 x |> f = f x

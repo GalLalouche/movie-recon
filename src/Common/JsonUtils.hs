@@ -1,4 +1,6 @@
-{-# LANGUAGE FlexibleInstances, OverloadedStrings, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 {-| A bunch of patently unsafe functions, since type-safe/total JSON is the way to madness. |-}
 module Common.JsonUtils(
@@ -18,7 +20,7 @@ module Common.JsonUtils(
   fromSuccess,
 ) where
 
-import           Data.Aeson                (Array, Object, Result(..), Value, decode, withArray, withObject)
+import           Data.Aeson                (Array, Object, Result(Error, Success), Value, decode, withArray, withObject)
 import           Data.Aeson.Types          (FromJSON, Parser, parseFieldMaybe)
 import           Data.Vector               (Vector)
 
@@ -31,7 +33,6 @@ import           Text.Read                 (readMaybe)
 
 import qualified Common.Maybes             as Maybes
 import           Common.Operators
-import           Data.Traversable          (traverse)
 
 
 -- TODO move to common

@@ -1,11 +1,11 @@
 module Common.MonadPluses where
 
-
 import Control.Monad    (MonadPlus, mfilter)
 import Data.Maybe       (fromJust, isJust)
 
 import Common.Maybes    (fcheck)
 import Common.Operators
+
 
 catMaybes :: MonadPlus m => m (Maybe a) -> m a
 catMaybes = fmap fromJust . mfilter isJust

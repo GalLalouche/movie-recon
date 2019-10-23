@@ -25,9 +25,11 @@ instance RunnableMonadTrans MaybeT Maybe where
   run = runMaybeT
   wrap = MaybeT
 
+-- Lifts a monadic function to the bottom monad to the trans monad.
 transBindTop :: (MonadTrans t, Monad m, Monad (t m)) => (a -> m b) -> t m a -> t m b
 transBindTop f = (=<<) (lift . f)
 
+-- Lifts a monadic function to the top monad to the trans monad.
 transBindBot :: (RunnableMonadTrans t bot, Monad bot, Monad top) => (a -> bot b) -> t top a -> t top b
 transBindBot f = (run >$> (=<<) f) .> wrap
 
