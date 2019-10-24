@@ -72,3 +72,4 @@ tests:
     - tasty-hunit-adapter
     - tasty-discover >= 4.2.1
     - random
+    - raw-strings-qq

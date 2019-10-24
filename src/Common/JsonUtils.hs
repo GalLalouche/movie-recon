@@ -1,93 +1,77 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
-
-{-| A bunch of patently unsafe functions, since type-safe/total JSON is the way to madness. |-}
 module Common.JsonUtils(
-  ByteStringable(..),
-  decodeUnsafe,
-  asObject,
-  getMaybe,
-  get,
+  I.decodeUnsafe,
+  I.asObject,
+  I.fromSuccess,
+  ObjectParser,
+  parseObject,
   int,
-  strMaybe,
   str,
+  strMaybe,
   strRead,
-  strReadMaybe,
   array,
   object,
-  objects,
-  fromSuccess,
+  (\\),
+  withObjects
 ) where
 
-import           Data.Aeson                (Array, Object, Result(Error, Success), Value, decode, withArray, withObject)
-import           Data.Aeson.Types          (FromJSON, Parser, parseFieldMaybe)
+import           Data.Aeson                (Array, Object, Result, Value)
+import           Data.Aeson.Types          (Parser)
+import qualified Data.Aeson.Types          as AesonT
+
+import           Data.Text                 (Text)
 import           Data.Vector               (Vector)
 
-import           Data.ByteString.Lazy.UTF8 (ByteString, fromString)
-import           Data.String.Interpolate   (i)
-import           Data.Text                 (Text, unpack)
-import           Data.Text.Lazy            (fromStrict)
-import           Data.Text.Lazy.Encoding   (encodeUtf8)
-import           Text.Read                 (readMaybe)
+import           Control.Monad             (ap, liftM, (>=>))
 
-import qualified Common.Maybes             as Maybes
-import           Common.Operators
+import qualified Common.JsonUtils.Internal as I
 
 
--- TODO move to common
-class ByteStringable a where
-  toByteString :: a -> ByteString
+newtype ObjectParser a = ObjectParser { parse :: Object -> Parser a }
+instance Functor ObjectParser where
+  fmap = liftM
+instance Applicative ObjectParser where
+  pure = return
+  (<*>) = ap
+instance Monad ObjectParser where
+  return = ObjectParser . const . return
+  (ObjectParser orig) >>= f = ObjectParser aux where
+    aux obj = do
+      parser <- parse . f <$> orig obj
+      parser obj
 
-instance ByteStringable ByteString where
-  toByteString = id
+fromValue :: ObjectParser a -> (Value -> Parser a)
+fromValue = (I.asObject >=>) . parse
 
-instance ByteStringable String where
-  toByteString = fromString
+parseObject :: ObjectParser a -> Value -> Result a
+parseObject = AesonT.parse . fromValue
 
-instance ByteStringable Text where
-  toByteString = encodeUtf8 . fromStrict
+int :: Text -> ObjectParser Int
+int = ObjectParser . I.int
 
-decodeUnsafe :: ByteStringable a => a -> Value
-decodeUnsafe a = Maybes.orError [i|Could not decode <#{toByteString a}>|] (toByteString a |> decode)
+str :: Text -> ObjectParser Text
+str = ObjectParser . I.str
 
-asObject :: Value -> Parser Object
-asObject = withObject "object" return
+strMaybe :: Text -> ObjectParser (Maybe Text)
+strMaybe = ObjectParser . I.strMaybe
 
-orError :: Text -> (Text -> Object -> Parser (Maybe a)) -> Text -> Object -> Parser a
-orError action f = \t o -> f t o <$$> Maybes.orError (msg t o) where
-  msg field o = [i|Could not apply <#{action}> on text <#{field}> in object <#{o}>|]
+strRead :: Read a => Text -> ObjectParser a
+strRead = ObjectParser . I.strRead
 
-getMaybe :: FromJSON a => Text -> Object -> Parser (Maybe a)
-getMaybe = flip parseFieldMaybe
+array :: Text -> ObjectParser Array
+array = ObjectParser . I.array
 
-get :: FromJSON a => Text -> Object -> Parser a
-get = orError "get" getMaybe
+object :: Text -> ObjectParser Object
+object = ObjectParser . I.object
 
-int :: Text -> Object -> Parser Int
-int = get
+-- A combinator for Object parsers
+-- >  object "foo" \\ object "bar" \\ object "bazz" \\ int "quxx"
+(\\) :: ObjectParser Object -> ObjectParser a -> ObjectParser a
+(ObjectParser orig) \\ (ObjectParser new) = ObjectParser $ orig >=> new
 
-str :: Text -> Object -> Parser Text
-str = get
+objects :: Text -> ObjectParser (Vector Object)
+objects = ObjectParser . I.objects
 
-strMaybe :: Text -> Object -> Parser (Maybe Text)
-strMaybe = getMaybe
-
-strReadMaybe :: Read a => Text -> Object -> Parser (Maybe a)
-strReadMaybe = str >$$> readMaybe . unpack
-
-strRead :: Read a => Text -> Object -> Parser a
-strRead = orError "strRead" strReadMaybe
-
-array :: Text -> Object -> Parser Array
-array = get >==> withArray "array" return
-
-object :: Text -> Object -> Parser Object
-object = get >==> withObject "object" return
-
-objects :: Text -> Object -> Parser (Vector Object)
-objects = array >==> traverse asObject
-
-fromSuccess :: Result a -> a
-fromSuccess (Success a) = a
-fromSuccess (Error e)   = error e
+withObjects :: Text -> ObjectParser a -> ObjectParser (Vector a)
+withObjects t p = ObjectParser $ \o -> do
+  os <- parse (objects t) o :: Parser (Vector Object)
+  traverse (parse p) os

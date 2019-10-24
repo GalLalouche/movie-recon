@@ -9,20 +9,22 @@ module MovieDB.Parsers(
   parsePersonName,
 ) where
 
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
-import Data.Foldable             (toList)
-import Data.Maybe                (mapMaybe)
-import Data.Semigroup            ((<>))
-import Data.Text                 (Text, pack, splitOn)
-import Data.Time                 (Day)
+import           Data.Foldable             (toList)
+import           Data.Maybe                (mapMaybe)
+import           Data.Semigroup            ((<>))
+import           Data.Text                 (Text, pack, splitOn, unpack)
+import qualified Data.Text                 as Text (null)
+import           Data.Time                 (Day)
 
-import Common.JsonObjectParser   (ObjectParser, int, str, strMaybe, strReadMaybe, withObjects)
-import Common.MonadPluses        (catMaybes)
-import Common.Operators
-import Common.Transes            ((>>=&), (>>=^))
+import           Common.JsonUtils          (ObjectParser, int, str, strMaybe, withObjects)
+import           Common.Maybes             (check, mapIfOrNothing)
+import           Common.MonadPluses        (catMaybes)
+import           Common.Operators
+import           Common.Transes            ((>>=&), (>>=^))
 
-import MovieDB.Types             (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkPersonId)
+import           MovieDB.Types             (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkPersonId)
 
 
 getId :: (Text -> a) -> ObjectParser a
@@ -49,7 +51,9 @@ parseMovieCredits = parseCastAndCrew parsePerson where
 data MaybeMovie = MaybeMovie MovieId Text (Maybe Day)
 parsePersonCredits :: ObjectParser [(Movie, ParticipationType)]
 parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
-  parseMovie = MaybeMovie <$> getId MovieId <*> str "title" <*> strReadMaybe "release_date"
+  parseMovie = MaybeMovie <$> getId MovieId <*> str "title" <*> getDay
+  getDay :: ObjectParser (Maybe Day)
+  getDay = str "release_date" <$$> mapIfOrNothing (not . Text.null) (read . unpack)
   liftMaybe :: (MaybeMovie, ParticipationType) -> Maybe (Movie, ParticipationType)
   liftMaybe (MaybeMovie id name d, pt) = fmap (\d -> (Movie id name d, pt)) d
 

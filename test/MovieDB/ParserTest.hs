@@ -3,17 +3,17 @@
 
 module MovieDB.ParserTest where
 
-import qualified MovieDB.Parsers         as P
-import           MovieDB.Types           (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
+import qualified MovieDB.Parsers      as P
+import           MovieDB.Types        (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
 
-import           Data.ByteString.Lazy    (readFile)
-import           Data.Set                (fromList)
-import           Data.Text               (pack)
-import           Data.Time               (fromGregorian)
-import           Prelude                 hiding (readFile)
+import           Data.ByteString.Lazy (readFile)
+import qualified Data.Set             as Set (fromList)
+import           Data.Text            (pack)
+import           Data.Time            (fromGregorian)
+import           Prelude              hiding (readFile)
 
-import           Common.JsonObjectParser (ObjectParser, parseObject)
-import           Common.JsonUtils        (decodeUnsafe, fromSuccess)
+import           Common.JsonUtils     (ObjectParser, parseObject)
+import qualified Common.JsonUtils     as JU (decodeUnsafe, fromSuccess)
 
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -22,7 +22,7 @@ import           Test.Tasty.HUnit
 parseJson :: ObjectParser a -> FilePath -> IO a
 parseJson parser fileName = do
    json <- readFile $ "test/resources/MovieDB/Database/" ++ fileName ++ ".json"
-   return $ fromSuccess $ parseObject parser (decodeUnsafe json)
+   return $ JU.fromSuccess $ parseObject parser (JU.decodeUnsafe json)
 
 test_MovieDB_parsers = testGroup "parseJson" [
     testCase "parseMovieCredits" $ do
@@ -37,7 +37,7 @@ test_MovieDB_parsers = testGroup "parseJson" [
             , person 1281196 "Alexander Dinelaris" Writer
             , person 661870 "Armando Bo" Writer
             ]
-      fromList res @?= fromList expected
+      Set.fromList res @?= Set.fromList expected
   , testCase "parsePersonCredits" $ do
       res <- parseJson P.parsePersonCredits "person_credits"
       let movie id name role y m d = (Movie (MovieId $ pack $ show id) name (fromGregorian y m d), role)
@@ -47,7 +47,7 @@ test_MovieDB_parsers = testGroup "parseJson" [
             , movie 194662 "Birdman" Actor 2014 10 17
             , movie 24053 "The Merry Gentleman" Director 2008 4 16
             ]
-      fromList res @?= fromList expected
+      Set.fromList res @?= Set.fromList expected
   , testCase "parseName" $ do
       res <- parseJson P.parsePersonName "person"
       res @?= "Bradley Cooper"

@@ -10,7 +10,7 @@ module MovieDB.API(
   personName,
 ) where
 
-import           Common.JsonObjectParser    (ObjectParser, parseObject)
+import           Common.JsonUtils           (ObjectParser, parseObject)
 import qualified Common.JsonUtils           as JU (decodeUnsafe, fromSuccess)
 import           Common.Operators
 
