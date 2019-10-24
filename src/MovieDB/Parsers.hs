@@ -7,8 +7,10 @@ module MovieDB.Parsers(
   Url(..),
   parseId,
   parsePersonName,
+  parseImdbId,
 ) where
 
+import           Control.Monad             (mfilter)
 import           Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
 import           Data.Foldable             (toList)
@@ -24,11 +26,14 @@ import           Common.MonadPluses        (catMaybes)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
-import           MovieDB.Types             (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkPersonId, mkMovieId)
+import           MovieDB.Types             (ImdbId, Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkImdbId, mkMovieId, mkPersonId)
 
 
 getId :: (Text -> a) -> ObjectParser a
 getId ctr = int "id" <$$> (show .> pack .> ctr)
+
+notNull :: Text -> Bool
+notNull = not . Text.null
 
 parseCastAndCrew :: ObjectParser a -> ObjectParser [(a, ParticipationType)]
 parseCastAndCrew parser = do
@@ -53,7 +58,7 @@ parsePersonCredits :: ObjectParser [(Movie, ParticipationType)]
 parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
   parseMovie = MaybeMovie <$> getId mkMovieId <*> str "title" <*> getDay
   getDay :: ObjectParser (Maybe Day)
-  getDay = str "release_date" <$$> mapIfOrNothing (not . Text.null) (read . unpack)
+  getDay = str "release_date" <$$> mapIfOrNothing notNull (read . unpack)
   liftMaybe :: (MaybeMovie, ParticipationType) -> Maybe (Movie, ParticipationType)
   liftMaybe (MaybeMovie id name d, pt) = fmap (\d -> (Movie id name d, pt)) d
 
@@ -63,3 +68,6 @@ parseId (Url url) = mkPersonId $ head $ splitOn "-" $ splitOn "/person/" url !! 
 
 parsePersonName :: ObjectParser Text
 parsePersonName = str "name"
+
+parseImdbId :: ObjectParser (Maybe ImdbId)
+parseImdbId = fmap mkImdbId . mfilter notNull <$> strMaybe "imdb_id"

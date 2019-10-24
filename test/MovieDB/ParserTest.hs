@@ -4,29 +4,20 @@
 module MovieDB.ParserTest where
 
 import qualified MovieDB.Parsers      as P
-import           MovieDB.Types        (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
+import           MovieDB.Types        (ImdbId(..), Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
 
-import           Data.ByteString.Lazy (readFile)
 import           Data.Text            (pack)
 import           Data.Time            (fromGregorian)
-import           Prelude              hiding (readFile)
 
-import           Common.JsonUtils     (ObjectParser, parseObject)
-import qualified Common.JsonUtils     as JU (decodeUnsafe, fromSuccess)
-
+import           Common.JsonTestUtils (parseJson)
+import           Common.TestCommon    ((*?=))
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Common.TestCommon ((*?=))
 
-
-parseJson :: ObjectParser a -> FilePath -> IO a
-parseJson parser fileName = do
-   json <- readFile $ "test/resources/MovieDB/" ++ fileName ++ ".json"
-   return $ JU.fromSuccess $ parseObject parser (JU.decodeUnsafe json)
 
 test_MovieDB_parsers = testGroup "parseJson" [
     testCase "parseMovieCredits" $ do
-      res <- parseJson P.parseMovieCredits "movie_credits"
+      res <- parseJson P.parseMovieCredits "MovieDB/movie_credits"
       let person id name role = (Person (PersonId $ pack $ show id) name, role)
       let expected = [
               person 2232 "Michael Keaton" Actor
@@ -39,7 +30,7 @@ test_MovieDB_parsers = testGroup "parseJson" [
             ]
       res *?= expected
   , testCase "parsePersonCredits" $ do
-      res <- parseJson P.parsePersonCredits "person_credits"
+      res <- parseJson P.parsePersonCredits "MovieDB/person_credits"
       let movie id name role y m d = (Movie (MovieId $ pack $ show id) name (fromGregorian y m d), role)
       let expected = [
               movie 268 "Batman" Actor 1989 6 23
@@ -49,8 +40,19 @@ test_MovieDB_parsers = testGroup "parseJson" [
             ]
       res *?= expected
   , testCase "parseName" $ do
-      res <- parseJson P.parsePersonName "person"
+      res <- parseJson P.parsePersonName "MovieDB/person"
       res @?= "Bradley Cooper"
+  , testGroup "parseImdbId" [
+      testCase "has ID" $ do
+        Just (ImdbId res) <- parseJson P.parseImdbId "MovieDB/external_ids"
+        res @?= "tt0368226"
+    , testCase "No ID" $ do
+        res <- parseJson P.parseImdbId "MovieDB/external_ids_no_id"
+        res @?= Nothing
+    , testCase "empty ID" $ do
+        res <- parseJson P.parseImdbId "MovieDB/external_ids_empty"
+        res @?= Nothing
+    ]
   ]
 
 test_URL_parsers = testGroup "parseId" [
