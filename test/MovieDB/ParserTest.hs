@@ -7,7 +7,6 @@ import qualified MovieDB.Parsers      as P
 import           MovieDB.Types        (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
 
 import           Data.ByteString.Lazy (readFile)
-import qualified Data.Set             as Set (fromList)
 import           Data.Text            (pack)
 import           Data.Time            (fromGregorian)
 import           Prelude              hiding (readFile)
@@ -17,6 +16,7 @@ import qualified Common.JsonUtils     as JU (decodeUnsafe, fromSuccess)
 
 import           Test.Tasty
 import           Test.Tasty.HUnit
+import           Common.TestCommon ((*?=))
 
 
 parseJson :: ObjectParser a -> FilePath -> IO a
@@ -37,7 +37,7 @@ test_MovieDB_parsers = testGroup "parseJson" [
             , person 1281196 "Alexander Dinelaris" Writer
             , person 661870 "Armando Bo" Writer
             ]
-      Set.fromList res @?= Set.fromList expected
+      res *?= expected
   , testCase "parsePersonCredits" $ do
       res <- parseJson P.parsePersonCredits "person_credits"
       let movie id name role y m d = (Movie (MovieId $ pack $ show id) name (fromGregorian y m d), role)
@@ -47,7 +47,7 @@ test_MovieDB_parsers = testGroup "parseJson" [
             , movie 194662 "Birdman" Actor 2014 10 17
             , movie 24053 "The Merry Gentleman" Director 2008 4 16
             ]
-      Set.fromList res @?= Set.fromList expected
+      res *?= expected
   , testCase "parseName" $ do
       res <- parseJson P.parsePersonName "person"
       res @?= "Bradley Cooper"

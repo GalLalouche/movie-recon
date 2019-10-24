@@ -4,7 +4,9 @@ module Common.TestCommon where
 
 import Control.Exception (SomeException(..), catch)
 
-import Test.Tasty.HUnit  ((@?))
+import Common.Foldables  (counts)
+
+import Test.Tasty.HUnit  ((@?), (@?=))
 
 
 newtype Box a = Box a deriving (Functor, Eq, Show)
@@ -19,4 +21,8 @@ assertThrows a = checkThrows a @? "Expected an some exception to be thrown but n
   checkThrows :: a -> IO Bool
   checkThrows a = seq a (return False) `catch` throws where
     throws (SomeException _) = return True
+
+-- Order-agnostic equality check
+(*?=) :: (Foldable f1, Foldable f2, Ord a, Show a) => f1 a -> f2 a -> IO ()
+a *?= b = counts a @?= counts b
 

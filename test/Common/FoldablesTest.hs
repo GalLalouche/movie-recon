@@ -1,5 +1,7 @@
 module Common.FoldablesTest where
 
+import qualified Data.Map as Map
+
 import qualified Common.Foldables as F
 
 import           Test.Tasty
@@ -25,4 +27,7 @@ test_all = testGroup "Foldables" [
           let result = action Nothing
           result @?= 0
     ]
+  , testCase "counts" $ do
+    let result = F.counts [1, 2, 3, 1, 2, 4, 1]
+    result @?= Map.fromList [(1, 3), (2, 2), (3, 1), (4, 1)]
   ]
