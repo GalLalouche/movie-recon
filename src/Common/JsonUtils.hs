@@ -3,6 +3,7 @@ module Common.JsonUtils(
   I.asObject,
   I.fromSuccess,
   ObjectParser,
+  parseUnsafe,
   parseObject,
   int,
   str,
@@ -38,6 +39,9 @@ instance Monad ObjectParser where
     aux obj = do
       parser <- parse . f <$> orig obj
       parser obj
+
+parseUnsafe :: ObjectParser a -> Text -> a
+parseUnsafe parser = I.fromSuccess . parseObject parser . I.decodeUnsafe
 
 fromValue :: ObjectParser a -> (Value -> Parser a)
 fromValue = (I.asObject >=>) . parse

@@ -13,7 +13,7 @@ module Actions(
 import           Data.String.Interpolate          (i)
 import           Data.Text                        (pack, splitOn, unpack)
 
-import           MovieDB.API                      (ApiKey, personCredits, personName)
+import           MovieDB.API                      (personCredits, personName)
 import           MovieDB.Database.Common          (DbCall, DbPath)
 import qualified MovieDB.Database.FilteredMovies  as FM
 import qualified MovieDB.Database.FollowedPersons as FP
@@ -35,31 +35,30 @@ import           Common.MonadPluses               (traverseFilter)
 import           Common.Traversables              (traverseFproduct)
 
 
-type APIAndDB = ReaderT (ApiKey, DbPath) IO ()
+type APIAndDB = ReaderT DbPath IO ()
 getUnseenMovies :: DbCall [Movie]
 getUnseenMovies = M.allMovies >>= traverseFilter FM.isNotFiltered
 
 getFollowedParticipations :: Movie -> DbCall [Participation]
 getFollowedParticipations = P.getParticipationsForMovie >=> traverseFilter (FP.isFollowed . Types.person)
 
-withDbPath = withReaderT snd
-withKey = withReaderT fst
+liftApi = liftIO
 
 updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = do
-  followedPersons <- withDbPath FP.allFollowedPersons
-  participations <- withKey $ concat <$> traverse personCredits followedPersons
-  void $ withDbPath $ traverse P.addValueEntry participations
+  followedPersons <- FP.allFollowedPersons
+  participations <- liftApi $ concat <$> traverse personCredits followedPersons
+  traverse_ P.addValueEntry participations
 
 addFollowedPerson :: String -> APIAndDB
 addFollowedPerson url = do
   let id = parseId $ Url $ pack url
-  name <- withKey $ personName id
+  name <- liftApi $ personName id
   _ <- liftIO $ putStrLn [i|Adding <#{name}> and their credits...|]
   let person = Person {_id = id, _name = name}
-  _ <- withDbPath $ FP.addFollowedPerson person
-  participations <- withKey $ personCredits person
-  traverse_ (withDbPath . P.addValueEntry) participations
+  _ <- FP.addFollowedPerson person
+  participations <- liftApi $ personCredits person
+  traverse_ P.addValueEntry participations
 
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do

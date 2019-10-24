@@ -1,11 +1,7 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TupleSections         #-}
 
-import           MovieDB.API                (ApiKey, readKey)
 import           MovieDB.Database.Common    (DbPath(..))
 
-import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
 
 import           Common.Operators
@@ -20,7 +16,7 @@ withDbPath :: Monad m => ReaderT DbPath m a -> m a
 withDbPath = flip runReaderT dbPath
 
 withBoth :: Actions.APIAndDB -> IO ()
-withBoth action = liftIO readKey <$$> (, dbPath) >>= runReaderT action
+withBoth = flip runReaderT dbPath
 
 
 main = do
