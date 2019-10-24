@@ -19,12 +19,12 @@ import qualified Data.Text                 as Text (null)
 import           Data.Time                 (Day)
 
 import           Common.JsonUtils          (ObjectParser, int, str, strMaybe, withObjects)
-import           Common.Maybes             (check, mapIfOrNothing)
+import           Common.Maybes             (mapIfOrNothing)
 import           Common.MonadPluses        (catMaybes)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
-import           MovieDB.Types             (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkPersonId)
+import           MovieDB.Types             (Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkPersonId, mkMovieId)
 
 
 getId :: (Text -> a) -> ObjectParser a
@@ -45,13 +45,13 @@ parseCastAndCrew parser = do
 
 parseMovieCredits :: ObjectParser [(Person, ParticipationType)]
 parseMovieCredits = parseCastAndCrew parsePerson where
-  parsePerson = Person <$> getId PersonId <*> str "name"
+  parsePerson = Person <$> getId mkPersonId <*> str "name"
 
 -- release_date is optional for unreleased movies
 data MaybeMovie = MaybeMovie MovieId Text (Maybe Day)
 parsePersonCredits :: ObjectParser [(Movie, ParticipationType)]
 parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
-  parseMovie = MaybeMovie <$> getId MovieId <*> str "title" <*> getDay
+  parseMovie = MaybeMovie <$> getId mkMovieId <*> str "title" <*> getDay
   getDay :: ObjectParser (Maybe Day)
   getDay = str "release_date" <$$> mapIfOrNothing (not . Text.null) (read . unpack)
   liftMaybe :: (MaybeMovie, ParticipationType) -> Maybe (Movie, ParticipationType)
