@@ -17,8 +17,9 @@ module MovieDB.Database.MovieScores(
 
 import           Prelude                    hiding (init)
 
+import           Data.Foldable              (toList)
 import qualified Data.Map                   as Map (assocs)
-import qualified Data.Vector                as Vector (fromList)
+import qualified Data.Set                   as Set (fromList)
 
 import           MovieDB.Database.Common    (DbCall, DbMaybe, DbPath(..), getValueByRowId)
 import           MovieDB.Database.Movies    (MovieRowId, MovieRowable, toMovieRowId)
@@ -61,7 +62,7 @@ clear = withMigration $ deleteWhere passFilter
 addMovieScores :: MovieScores -> DbCall ()
 addMovieScores (MovieScores m ss) = do
   mid <- toMovieRowId m
-  let scores = fmap (mid ,) ss
+  let scores = (mid, ) <$> toList ss
   traverse_ (uncurry addMovieScore) scores where
     addMovieScore :: MovieRowId -> MovieScore -> DbCall MovieScoreRowId
     addMovieScore mid (MovieScore source score) = withMigration $ insert $ MovieScoreRow mid source score
@@ -69,7 +70,7 @@ addMovieScores (MovieScores m ss) = do
 toMovieScores :: [MovieScoreRow] -> DbCall MovieScores
 toMovieScores result = do
   movie <- getValueByRowId $ movieScoreRowMovieId $ head result
-  return $ MovieScores movie (Vector.fromList $ map toScore result) where
+  return $ MovieScores movie (Set.fromList $ map toScore result) where
     toScore = uncurry MovieScore . (movieScoreRowSource &&& movieScoreRowScore)
 
 -- Returns nothing if there are no scores for the movie

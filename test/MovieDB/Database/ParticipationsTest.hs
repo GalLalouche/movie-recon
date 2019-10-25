@@ -2,16 +2,16 @@
 
 module MovieDB.Database.ParticipationsTest where
 
-import Common.MaybeTUtils (fromJust)
+import MovieDB.Database.Movies         ()
+import MovieDB.Database.Participations
+import MovieDB.Types                   (CastAndCrew(..), Participation(..), ParticipationType(Actor, Director, Writer))
 
-import           MovieDB.Database.Common         (DbCall)
-import qualified MovieDB.Database.Movies         as InstancesOnly
-import           MovieDB.Database.Participations
-import           MovieDB.Database.TestCommon     (makeMovie, makePerson, withTempDb)
-import           MovieDB.Types                   (Movie(..), MovieId(..), Participation(..),
-                                                  ParticipationType(..), PersonId, CastAndCrew(..))
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Common.MaybeTUtils              (fromJust)
+
+import Common.TestCommon               ((*?=))
+import MovieDB.Database.TestCommon     (makeMovie, makePerson, withTempDb)
+import Test.Tasty
+import Test.Tasty.HUnit
 
 
 test_participations = [
@@ -32,6 +32,6 @@ test_participations = [
         fromJust $ castAndCrew movie1
       directors res @?= [director]
       writers res @?= []
-      actors res @?= [actor1, actor3]
+      actors res *?= [actor1, actor3]
       return ()
   ]

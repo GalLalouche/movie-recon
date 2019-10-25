@@ -4,8 +4,8 @@ module MovieDB.Database.MovieScoresTest where
 
 import           Control.Monad.IO.Class       (liftIO)
 import           Control.Monad.Trans.Maybe    (runMaybeT)
+import qualified Data.Set                     as Set (fromList)
 import           Data.Time                    (fromGregorian)
-import qualified Data.Vector                  as Vector (fromList)
 import           Prelude                      hiding (init)
 
 import           MovieDB.Types                (Movie(..), MovieId(..))
@@ -22,8 +22,8 @@ import           Test.Tasty.HUnit
 
 movie = Movie (MovieId "42") "foobar" (fromGregorian 2000 1 1)
 movie2 = Movie (MovieId "54") "bazz" (fromGregorian 1999 1 1)
-movieScores = MovieScores movie (Vector.fromList [MovieScore IMDB 12, MovieScore RottenTomatoes 3, MovieScore Metacritic 84])
-movieScores2 = MovieScores movie2 (Vector.fromList [MovieScore IMDB 90, MovieScore RottenTomatoes 60])
+movieScores = MovieScores movie (Set.fromList [MovieScore IMDB 12, MovieScore RottenTomatoes 3, MovieScore Metacritic 84])
+movieScores2 = MovieScores movie2 (Set.fromList [MovieScore IMDB 90, MovieScore RottenTomatoes 60])
 
 testMovieScores = testGroup "movieScores" [
       testCase "No movies returns Nothing" $ do
