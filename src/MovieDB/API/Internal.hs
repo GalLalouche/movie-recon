@@ -1,10 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections     #-}
 
-module MovieDB.Parsers(
+module MovieDB.API.Internal(
   parseMovieCredits,
   parsePersonCredits,
-  Url(..),
   parseId,
   parsePersonName,
   parseImdbId,
@@ -26,6 +25,7 @@ import           Common.MonadPluses        (catMaybes)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
+import           APIs                      (Url(..))
 import           MovieDB.Types             (ImdbId, Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkImdbId, mkMovieId, mkPersonId)
 
 
@@ -62,9 +62,8 @@ parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
   liftMaybe :: (MaybeMovie, ParticipationType) -> Maybe (Movie, ParticipationType)
   liftMaybe (MaybeMovie id name d, pt) = fmap (\d -> (Movie id name d, pt)) d
 
-newtype Url = Url Text
 parseId :: Url -> PersonId
-parseId (Url url) = mkPersonId $ head $ splitOn "-" $ splitOn "/person/" url !! 1
+parseId (Url url) = mkPersonId $ head $ splitOn "-" $ splitOn "/person/" (pack url) !! 1
 
 parsePersonName :: ObjectParser Text
 parsePersonName = str "name"

@@ -14,6 +14,7 @@ module Actions(
 import           Data.String.Interpolate          (i)
 import           Data.Text                        (pack, splitOn, unpack)
 
+import           APIs                             (Url(..))
 import qualified MovieDB.API                      as API
 import           MovieDB.Database.Common          (DbCall, DbPath)
 import qualified MovieDB.Database.FilteredMovies  as FM
@@ -21,13 +22,12 @@ import qualified MovieDB.Database.FollowedPersons as FP
 import qualified MovieDB.Database.Movies          as M
 import qualified MovieDB.Database.MovieScores     as MS
 import qualified MovieDB.Database.Participations  as P
-import           MovieDB.Parsers                  (Url(..), parseId)
 import           MovieDB.Types                    (FilteredMovie(..), Movie(..), MovieId(..), Participation(..), Person(..), mkMovieId)
 import qualified MovieDB.Types                    as Types
 import           OMDB                             (MovieScores)
 import qualified OMDB
 
-import           Control.Monad                    ((>=>), unless)
+import           Control.Monad                    (unless, (>=>))
 import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT)
 import           Control.Monad.Trans.Maybe        (runMaybeT)
@@ -57,10 +57,8 @@ updateMoviesForAllFollowedPersons = do
 
 addFollowedPerson :: String -> APIAndDB
 addFollowedPerson url = do
-  let id = parseId $ Url $ pack url
-  name <- liftApi $ API.personName id
-  _ <- liftIO $ putStrLn [i|Adding <#{name}> and their credits...|]
-  let person = Person {_id = id, _name = name}
+  person <- liftApi $ API.personName $ Url url
+  _ <- liftIO $ putStrLn [i|Adding <#{person}> and their credits...|]
   _ <- FP.addFollowedPerson person
   participations <- liftApi $ API.personCredits person
   traverse_ P.addValueEntry participations
