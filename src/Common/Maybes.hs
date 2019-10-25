@@ -1,10 +1,11 @@
 module Common.Maybes where
 
 import Common.Operators
+import Data.Maybe       (fromMaybe, maybe)
 
 
 orError :: String -> Maybe a -> a
-orError _ (Just x) = x
+orError _ (Just x)  = x
 orError msg Nothing = error msg
 
 check :: (a -> Bool) -> a -> Maybe a
@@ -15,3 +16,9 @@ fcheck f a = (\b -> if b then Just a else Nothing) <$> f a
 
 mapIfOrNothing :: (a -> Bool) -> (a -> b) -> a -> Maybe b
 mapIfOrNothing p f = fmap f . check p
+
+orMempty :: Monoid a => Maybe a -> a
+orMempty = fromMaybe mempty
+
+mapMonoid :: Monoid b => (a -> b) -> Maybe a -> b
+mapMonoid = maybe mempty
