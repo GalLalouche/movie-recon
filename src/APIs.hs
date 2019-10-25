@@ -11,8 +11,8 @@ import qualified Common.JsonUtils          as JU (parseUnsafe)
 import           Network.HTTP              (getRequest, getResponseBody, simpleHTTP)
 
 
-type ApiCall a = IO a
-type ApiMaybe a = MaybeT IO a
+type ApiCall = IO
+type ApiMaybe = MaybeT ApiCall
 readKey :: FilePath -> IO String
 readKey fileName = let fullPath = [i|keys/#{fileName}.txt|] in readFile fullPath
 

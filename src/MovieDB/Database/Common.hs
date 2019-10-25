@@ -1,23 +1,23 @@
-{-# LANGUAGE AllowAmbiguousTypes, QuasiQuotes, FunctionalDependencies, ScopedTypeVariables #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE QuasiQuotes            #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 
 module MovieDB.Database.Common where
 
-import Common.Operators
-import Data.Functor (($>))
-import Data.Text (Text)
-import Data.String.Interpolate (i)
+import Data.Functor               (($>))
+import Data.String.Interpolate    (i)
+import Data.Text                  (Text)
 
-import Control.Arrow ((&&&))
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans.Reader (ReaderT, runReaderT)
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import Control.Monad.IO.Class     (liftIO)
+import Control.Monad.Trans.Maybe  (MaybeT, runMaybeT)
+import Control.Monad.Trans.Reader (ReaderT)
 
-import Database.Persist (entityKey, entityVal)
 
 newtype DbPath = DbPath { path :: Text }
-type DbCall a = ReaderT DbPath IO a
-type DbMaybe a = MaybeT (ReaderT DbPath IO) a
-
+type DbCall = ReaderT DbPath IO
+type DbMaybe = MaybeT DbCall
 
 class ExtractableId a typeId | a -> typeId where
   extractId :: a -> typeId
@@ -44,7 +44,7 @@ insertOrVerify :: (ReadWriteDatabase a typeId rowId, Show a, Eq a) => a -> DbCal
 insertOrVerify a = do
   oldValue <- runMaybeT $ valueAndRowId $ extractId a
   case oldValue of
-    Nothing -> forceInsert a
+    Nothing                     -> forceInsert a
     Just (rowId, existingValue) -> liftIO $ assertSameOrThrow existingValue a $> rowId
   where
     assertSameOrThrow :: (Eq a, Show a) => a -> a -> IO ()
