@@ -20,7 +20,7 @@ withBoth = withDbPath
 main = do
   args <- Config.parseConfig
   case args of
-    (Config.GetUnseen verbose) -> withDbPath $ Actions.getFormattedUnseenMovies verbose
+    (Config.GetUnseen verbose) -> withDbPath $ Actions.printUnseenMovies verbose
     Config.UpdateSeen          -> withDbPath Actions.parseSeenMovies
     Config.UpdateIndex         -> withBoth Actions.updateMoviesForAllFollowedPersons
     Config.UpdateScores        -> withBoth Actions.updateScores

@@ -53,11 +53,10 @@ infixl 4 <$$> -- Same priority as <**>
 -- fmap equivalent of >=> and <=<
 (>$>) :: Functor m => (a -> m b) -> (b -> c) -> (a -> m c)
 (f >$> g) a = f a <$$> g
-infixr 1 >$> -- same priority as >=>
+infixl 4 >$> -- same priority as .>
 
 (<$<) :: Functor m => (b -> c) -> (a -> m b) -> (a -> m c)
 (<$<) = flip (>$>)
-
 infixr 1 <$< -- same priority as <=<
 
 -- >=> and <=< for two parameters, or ..> for monads
