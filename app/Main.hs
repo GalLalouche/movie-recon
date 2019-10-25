@@ -4,8 +4,6 @@ import           MovieDB.Database.Common    (DbPath(..))
 
 import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
 
-import           Common.Operators
-
 import qualified Actions
 import qualified Config
 
@@ -16,7 +14,7 @@ withDbPath :: Monad m => ReaderT DbPath m a -> m a
 withDbPath = flip runReaderT dbPath
 
 withBoth :: Actions.APIAndDB -> IO ()
-withBoth = flip runReaderT dbPath
+withBoth = withDbPath
 
 
 main = do
@@ -25,4 +23,5 @@ main = do
     (Config.GetUnseen verbose) -> withDbPath $ Actions.getFormattedUnseenMovies verbose
     Config.UpdateSeen          -> withDbPath Actions.parseSeenMovies
     Config.UpdateIndex         -> withBoth Actions.updateMoviesForAllFollowedPersons
+    Config.UpdateScores        -> withBoth Actions.updateScores
     (Config.AddPerson url)     -> withBoth $ Actions.addFollowedPerson url

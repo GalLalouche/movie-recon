@@ -8,28 +8,33 @@ module Actions(
   addFollowedPerson,
   parseSeenMovies,
   getFormattedUnseenMovies,
+  updateScores
 ) where
 
 import           Data.String.Interpolate          (i)
 import           Data.Text                        (pack, splitOn, unpack)
 
-import           MovieDB.API                      (personCredits, personName)
+import qualified MovieDB.API                      as API
 import           MovieDB.Database.Common          (DbCall, DbPath)
 import qualified MovieDB.Database.FilteredMovies  as FM
 import qualified MovieDB.Database.FollowedPersons as FP
 import qualified MovieDB.Database.Movies          as M
+import qualified MovieDB.Database.MovieScores     as MS
 import qualified MovieDB.Database.Participations  as P
 import           MovieDB.Parsers                  (Url(..), parseId)
 import           MovieDB.Types                    (FilteredMovie(..), Movie(..), MovieId(..), Participation(..), Person(..), mkMovieId)
 import qualified MovieDB.Types                    as Types
+import           OMDB                             (MovieScores)
+import qualified OMDB
 
-import           Control.Monad                    ((>=>))
+import           Control.Monad                    ((>=>), unless)
 import           Control.Monad.IO.Class           (liftIO)
+import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT)
 import           Control.Monad.Trans.Maybe        (runMaybeT)
-import           Control.Monad.Trans.Reader       (ReaderT, withReaderT)
+import           Control.Monad.Trans.Reader       (ReaderT)
 import           Data.Foldable                    (traverse_)
-import           Data.Functor                     (void)
 
+import           Common.ExceptTUtils              (meither, toExcept)
 import           Common.Maybes                    (orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Traversables              (traverseFproduct)
@@ -47,17 +52,17 @@ liftApi = liftIO
 updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = do
   followedPersons <- FP.allFollowedPersons
-  participations <- liftApi $ concat <$> traverse personCredits followedPersons
+  participations <- liftApi $ concat <$> traverse API.personCredits followedPersons
   traverse_ P.addValueEntry participations
 
 addFollowedPerson :: String -> APIAndDB
 addFollowedPerson url = do
   let id = parseId $ Url $ pack url
-  name <- liftApi $ personName id
+  name <- liftApi $ API.personName id
   _ <- liftIO $ putStrLn [i|Adding <#{name}> and their credits...|]
   let person = Person {_id = id, _name = name}
   _ <- FP.addFollowedPerson person
-  participations <- liftApi $ personCredits person
+  participations <- liftApi $ API.personCredits person
   traverse_ P.addValueEntry participations
 
 parseSeenMovies :: DbCall ()
@@ -72,7 +77,6 @@ parseSeenMovies = do
       let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [i|Unsupported prefix <#{r}>|]
       movie <- getValueOrError $ mkMovieId $ pack id
       return $ FilteredMovie movie reason
-    getValueOrError :: MovieId -> DbCall Movie
     getValueOrError mid = orError [i|Could not find movie with ID <#{mid}>|] <$> runMaybeT (M.getValue mid)
 
 mkStringMovie (Movie (MovieId id) name date) = [i|#{id}\t#{name}\t#{date}|]
@@ -91,8 +95,20 @@ mkStringMovieAndParticipations m ps = let
 
 getFormattedUnseenMovies :: Bool -> DbCall ()
 getFormattedUnseenMovies verbose = do
-  movies <- Actions.getUnseenMovies
-  participations <- traverseFproduct Actions.getFollowedParticipations movies
+  movies <- getUnseenMovies
+  participations <- traverseFproduct getFollowedParticipations movies
   let formattedMovies = map mkStringMovie movies
   let formattedParticipations = map (uncurry mkStringMovieAndParticipations) participations
   liftIO $ putStr $ unlines $ if verbose then formattedParticipations else formattedMovies
+
+updateScores :: APIAndDB
+updateScores = traverse_ updateScore =<< M.allMovies where
+  updateScore movie = do
+    hasScore <- MS.hasMovieScores movie
+    unless hasScore (handle $ mapExceptT liftIO $ fetchScores movie)
+  fetchScores :: Movie -> ExceptT String IO MovieScores
+  fetchScores movie = do
+    _ <- liftIO $ putStrLn [i|Fetching scores for <#{movie}>|]
+    id <- toExcept [i|No IMDB ID for <#{movie}>!|] (API.imdbId movie)
+    toExcept [i|No scores <#{movie}>!|] (OMDB.getMovieScores movie id)
+  handle = meither (liftIO . putStrLn) MS.addMovieScores
