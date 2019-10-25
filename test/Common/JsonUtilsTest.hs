@@ -1,16 +1,16 @@
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 
 module Common.JsonUtilsTest where
 
-import           Common.JsonUtils  ((\\))
+import           Common.JsonUtils  ((\\), (\>))
 import qualified Common.JsonUtils  as JU
 import           Common.TestCommon (assertThrows)
 
 import           Data.Aeson.Types  (Value(Number), (.:))
 import           Data.Text         (Text)
 import           Data.Time         (fromGregorian)
-import qualified Data.Vector       as Vector (fromList)
 
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -42,17 +42,17 @@ test_all = testGroup "JsonUtils"  [
   , testGroup "array" [
       testCase "valid" $ do
         let result = parse (JU.array "foo") [r|{"foo": [1, 2, 3, 4]}|]
-        result @?= Vector.fromList [Number 1, Number 2, Number 3, Number 4]
+        result @?= [Number 1, Number 2, Number 3, Number 4]
     , testCase "no such field throws" $ assertThrows $ parse (JU.array "bazz") [r|{"foo": [1, 2, 3, 4]}|]
     , testCase "invalid type throws" $ assertThrows $ parse (JU.array "foo") [r|{"foo": "bar"}|]
     ]
-  , testCase [r|\\ and object|] $ do
-      let result = parse (JU.object "foo" \\ JU.object "bar" \\ JU.int "bazz") [r|{"foo": {"bar": {"bazz": 42}}}|]
+  , testCase "combiners" $ do
+      let result = parse ("foo" \\ "bar" \> "bazz") [r|{"foo": {"bar": {"bazz": 42}}}|] :: Int
       result @?= 42
   , testGroup "withObjects" [
       testCase "valid" $ do
         let result = parse (JU.withObjects "foo" (JU.int "bar")) [r|{"foo": [{"bar": 1}, {"bar": 2}, {"bar": 3}]}|]
-        result @?= Vector.fromList [1, 2, 3]
+        result @?= [1, 2, 3]
     , testCase "invalid field throws" $ assertThrows $ parse (JU.withObjects "foo" (JU.int "bar")) [r|{"foo": 5}|]
     , testCase "no fieled throws" $ assertThrows $ parse (JU.withObjects "bazz" (JU.int "bar")) [r|{"foo": 5}|]
     ]

@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Common.JsonUtils(
   I.decodeUnsafe,
   I.asObject,
@@ -12,14 +14,16 @@ module Common.JsonUtils(
   array,
   object,
   (\\),
+  (\>),
   withObjects
 ) where
 
 import           Data.Aeson                (Array, Object, Result, Value)
-import           Data.Aeson.Types          (Parser)
+import           Data.Aeson.Types          (FromJSON, Parser)
 import qualified Data.Aeson.Types          as AesonT
 
-import           Data.Text                 (Text)
+import           Data.String               (IsString(..))
+import           Data.Text                 (Text, pack)
 import           Data.Vector               (Vector)
 
 import           Control.Monad             (ap, liftM, (>=>))
@@ -67,11 +71,6 @@ array = ObjectParser . I.array
 object :: Text -> ObjectParser Object
 object = ObjectParser . I.object
 
--- A combinator for Object parsers
--- >  object "foo" \\ object "bar" \\ object "bazz" \\ int "quxx"
-(\\) :: ObjectParser Object -> ObjectParser a -> ObjectParser a
-(ObjectParser orig) \\ (ObjectParser new) = ObjectParser $ orig >=> new
-
 objects :: Text -> ObjectParser (Vector Object)
 objects = ObjectParser . I.objects
 
@@ -79,3 +78,19 @@ withObjects :: Text -> ObjectParser a -> ObjectParser (Vector a)
 withObjects t p = ObjectParser $ \o -> do
   os <- parse (objects t) o :: Parser (Vector Object)
   traverse (parse p) os
+
+
+combine :: (Text -> b -> Parser a) -> ObjectParser b -> Text -> ObjectParser a
+combine combiner (ObjectParser p) fieldName = ObjectParser $ p >=> combiner fieldName
+
+(\\) :: ObjectParser Object -> Text -> ObjectParser Object
+(\\) = combine I.object
+
+(\>) :: FromJSON p => ObjectParser Object -> Text -> ObjectParser p
+(\>) = combine I.get
+
+-- This allows one to write "foo" \\ "bar" \> "bazz", instead of JU.object "foo" \\ "bar" \> "bazz".
+-- Unfortunately, using a "union-class" of Text and (ObjectParser Object) would break when used in combination with
+-- OverloadedStrings (which one pretty much has to use for the above to work).
+instance IsString (ObjectParser Object) where
+   fromString = object . pack
