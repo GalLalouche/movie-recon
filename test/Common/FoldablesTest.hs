@@ -1,7 +1,5 @@
 module Common.FoldablesTest where
 
-import qualified Data.Map as Map
-
 import qualified Common.Foldables as F
 
 import           Test.Tasty
@@ -10,24 +8,21 @@ import           Test.Tasty.HUnit
 
 test_all = testGroup "Foldables" [
     testGroup "nth" [
-        testCase "exists" $ do
-          let result = F.nth 1 [1, 2, 3]
-          result @?= Just 2
-      , testCase "does not exist" $ do
-          let result = F.nth 4 [1, 2, 3]
-          result @?= Nothing
+      testCase "exists" $ F.nth 1 [1, 2, 3] @?= Just 2
+    , testCase "does not exist" $ F.nth 4 [1, 2, 3] @?= Nothing
     ]
   , let
       action = F.mapHeadOrElse (+ 1) 0
     in testGroup "mapHeadOrElse" [
-        testCase "exists" $ do
-          let result = action $ Just 1
-          result @?= 2
-      , testCase "does not exist" $ do
-          let result = action Nothing
-          result @?= 0
+      testCase "exists" $ action (Just 1) @?= 2
+    , testCase "does not exist" $ action Nothing @?= 0
     ]
-  , testCase "counts" $ do
-    let result = F.counts [1, 2, 3, 1, 2, 4, 1]
-    result @?= Map.fromList [(1, 3), (2, 2), (3, 1), (4, 1)]
+  , testCase "intercalate" $ F.intercalate ", " ["foo", "bar", "bazz"] @?= "foo, bar, bazz"
+  , let
+      map x = if x > 4 then Just x else Nothing
+    in testGroup "mapFind" [
+      testCase "exists" $ F.mapFind map [1..] @?= Just 5
+    , testCase "does not exist" $ F.mapFind map [1..4] @?= Nothing
+    , testCase "empty" $ F.mapFind map [] @?= Nothing
+    ]
   ]

@@ -4,7 +4,7 @@ module Common.TestCommon where
 
 import Control.Exception (SomeException(..), catch)
 
-import Common.Foldables  (counts)
+import Common.Maps       (counts)
 
 import Test.Tasty.HUnit  ((@?), (@?=))
 
