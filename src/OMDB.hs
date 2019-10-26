@@ -1,4 +1,5 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE QuasiQuotes     #-}
 
 module OMDB(
   Source(..),
@@ -16,14 +17,14 @@ import           Data.String.Interpolate   (i)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 
 import           APIs                      (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
-import           MovieDB.Types             (ImdbId(..), Movie)
+import           MovieDB.Types             (ImdbId, pattern ImdbId, Movie)
 
 import           OMDB.Internal             (MovieScore(MovieScore, _score, _source), Source(..), parse)
 
 import           Common.Foldables          (notNull)
 import qualified Common.Maps               as Maps
-import qualified Common.Sets               as Sets
 import           Common.Maybes             (check)
+import qualified Common.Sets               as Sets
 
 
 getScore :: ImdbId -> ApiMaybe (Set MovieScore)

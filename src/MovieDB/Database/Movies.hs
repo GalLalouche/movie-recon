@@ -1,14 +1,11 @@
-{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
 
 module MovieDB.Database.Movies(
   init,
@@ -28,7 +25,7 @@ import Prelude                    hiding (id, init)
 import Common.Operators
 
 import MovieDB.Database.Common    (DbCall, DbMaybe, DbPath(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
-import MovieDB.Types              (Movie(..), MovieId(..))
+import MovieDB.Types              (Movie(..), MovieId, mkMovieId)
 
 import Control.Arrow              ((&&&))
 import Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
@@ -42,6 +39,7 @@ import Data.Time                  (Day)
 import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
 import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
 import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 MovieRow
@@ -60,7 +58,7 @@ rowIso = iso fromMovie toMovie where
   fromMovie :: Movie -> MovieRow
   fromMovie movie = MovieRow (movie ^. id ^. id) (movie ^. name) (movie ^. date)
   toMovie :: MovieRow -> Movie
-  toMovie (MovieRow id name date) = Movie (MovieId id) name date
+  toMovie (MovieRow id name date) = Movie (mkMovieId id) name date
 
 withMigration action = do
   dbPath <- path <$> ask

@@ -1,11 +1,11 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms   #-}
 
 module MovieDB.API.InternalTest where
 
 import           APIs                 (Url(..))
 import qualified MovieDB.API.Internal as I
-import           MovieDB.Types        (ImdbId(..), Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..))
+import           MovieDB.Types        (pattern ImdbId, Movie(..), ParticipationType(Actor, Director, Writer), Person(..), mkMovieId, mkPersonId)
 
 import           Data.Text            (pack)
 import           Data.Time            (fromGregorian)
@@ -19,7 +19,7 @@ import           Test.Tasty.HUnit
 test_MovieDB_parsers = testGroup "parseJson" [
     testCase "parseMovieCredits" $ do
       res <- parseJson I.parseMovieCredits "MovieDB/movie_credits"
-      let person id name role = (Person (PersonId $ pack $ show id) name, role)
+      let person id name role = (Person (mkPersonId $ pack $ show id) name, role)
       let expected = [
               person 2232 "Michael Keaton" Actor
             , person 819 "Edward Norton" Actor
@@ -32,7 +32,7 @@ test_MovieDB_parsers = testGroup "parseJson" [
       res *?= expected
   , testCase "parsePersonCredits" $ do
       res <- parseJson I.parsePersonCredits "MovieDB/person_credits"
-      let movie id name role y m d = (Movie (MovieId $ pack $ show id) name (fromGregorian y m d), role)
+      let movie id name role y m d = (Movie (mkMovieId $ pack $ show id) name (fromGregorian y m d), role)
       let expected = [
               movie 268 "Batman" Actor 1989 6 23
             , movie 364 "Batman Returns" Actor 1992 6 19
@@ -40,27 +40,17 @@ test_MovieDB_parsers = testGroup "parseJson" [
             , movie 24053 "The Merry Gentleman" Director 2008 4 16
             ]
       res *?= expected
-  , testCase "parseName" $ do
-      res <- parseJson I.parsePersonName "MovieDB/person"
-      res @?= "Bradley Cooper"
+  , testCase "parseName" $ ("Bradley Cooper" @=?) =<< parseJson I.parsePersonName "MovieDB/person"
   , testGroup "parseImdbId" [
       testCase "has ID" $ do
         Just (ImdbId res) <- parseJson I.parseImdbId "MovieDB/external_ids"
         res @?= "tt0368226"
-    , testCase "No ID" $ do
-        res <- parseJson I.parseImdbId "MovieDB/external_ids_no_id"
-        res @?= Nothing
-    , testCase "empty ID" $ do
-        res <- parseJson I.parseImdbId "MovieDB/external_ids_empty"
-        res @?= Nothing
+    , testCase "No ID" $ (Nothing @=?) =<< parseJson I.parseImdbId "MovieDB/external_ids_no_id"
+    , testCase "empty ID" $ (Nothing @=?) =<< parseJson I.parseImdbId "MovieDB/external_ids_empty"
     ]
   ]
 
 test_URL_parsers = testGroup "parseId" [
-    testCase "starting with HTTP" $ do
-      let url = Url "https://www.themoviedb.org/person/1-george-lucas"
-      I.parseId url @?= PersonId "1"
-  , testCase "Not starting with HTTP" $ do
-      let url = Url "themoviedb.org/person/2-mark-hamill"
-      I.parseId url @?= PersonId "2"
+    testCase "starting with HTTP" $ I.parseId (Url "https://www.themoviedb.org/person/1-george-lucas") @?= mkPersonId "1"
+  , testCase "Not starting with HTTP" $ I.parseId (Url "themoviedb.org/person/2-mark-hamill") @?= mkPersonId "2"
   ]

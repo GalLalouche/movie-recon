@@ -1,12 +1,15 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
 module MovieDB.Types(
-  PersonId(..),
+  PersonId,
+  pattern PersonId,
   Person(..),
   HasDeepId(..),
-  MovieId(..),
+  MovieId,
+  pattern MovieId,
   Movie(..),
   FilterReason(..),
   FilteredMovie(..),
@@ -16,7 +19,8 @@ module MovieDB.Types(
   mkPersonId,
   mkMovieId,
   toCastAndCrew,
-  ImdbId(..),
+  ImdbId,
+  pattern ImdbId,
   mkImdbId,
 ) where
 
@@ -28,13 +32,18 @@ import qualified Data.Text               as Text
 import           Data.Time               (Day)
 import           Text.Regex              (matchRegex, mkRegex)
 
+import           Common.Assertions       (assertMsg)
 import           Common.Maps             (monoidLookup, multiMapBy)
-import           Common.Maybes           (check, orError)
 
 
-newtype PersonId = PersonId
+newtype PersonId = RealPersonId
   { _id :: Text
   } deriving (Show, Eq, Ord)
+pattern PersonId :: Text -> PersonId
+pattern PersonId id <- RealPersonId id
+{-# COMPLETE PersonId #-}
+mkPersonId :: Text -> PersonId
+mkPersonId = checkDigitOnlyId "Person" RealPersonId
 
 data Person = Person
   { _id   :: PersonId
@@ -44,9 +53,21 @@ data Person = Person
 class HasDeepId a where
   deepId :: a -> Text
 
-newtype MovieId = MovieId
+newtype MovieId = RealMovieId
   { _id :: Text
   } deriving (Show, Eq, Ord)
+pattern MovieId :: Text -> MovieId
+pattern MovieId id <- RealMovieId id
+{-# COMPLETE MovieId #-}
+mkMovieId :: Text -> MovieId
+mkMovieId = checkDigitOnlyId "Movie" RealMovieId
+
+checkValidId :: (Text -> Bool) -> Text -> (Text -> a) -> Text -> a
+checkValidId check name ctor s = assertMsg (check s) [i|<#{s}> is not a valid #{name} ID|] (ctor s)
+
+checkDigitOnlyId = checkValidId isValidId where
+  isValidId = isJust . matchRegex digitsOnly . unpack
+  digitsOnly = mkRegex "^[0-9]+$"
 
 data Movie = Movie
   { _id   :: MovieId
@@ -72,27 +93,6 @@ data CastAndCrew = CastAndCrew
   , writers   :: [Person]
   , actors    :: [Person]
   } deriving (Show, Eq, Ord)
-
-data ParticipationType = Director | Writer | Actor deriving (Show, Read, Eq, Ord)
-
-data Participation = Participation
-  { person            :: Person
-  , movie             :: Movie
-  , participationType :: ParticipationType
-  } deriving (Show, Eq, Ord)
-
-
-checkValidId :: Text -> (Text -> a) -> Text -> a
-checkValidId name ctor s = if isValidId s then ctor s else error [i|<#{s}> is not a valid #{name} ID|] where
-  isValidId = isJust . matchRegex digitsOnly . unpack
-  digitsOnly = mkRegex "^[0-9]+$"
-
-mkPersonId :: Text -> PersonId
-mkPersonId = checkValidId "Person" PersonId
-
-mkMovieId :: Text -> MovieId
-mkMovieId = checkValidId "Movie" MovieId
-
 toCastAndCrew :: NonEmpty Participation -> CastAndCrew
 toCastAndCrew ps@(p :| _) = let
     map = multiMapBy participationType ps
@@ -103,6 +103,17 @@ toCastAndCrew ps@(p :| _) = let
     actors = getAll Actor
   in CastAndCrew { movie = m, directors = directors, writers = writers, actors = actors }
 
-newtype ImdbId = ImdbId Text deriving (Eq, Ord, Show)
+data ParticipationType = Director | Writer | Actor deriving (Show, Read, Eq, Ord)
+
+data Participation = Participation
+  { person            :: Person
+  , movie             :: Movie
+  , participationType :: ParticipationType
+  } deriving (Show, Eq, Ord)
+
+newtype ImdbId = RealImdbId Text deriving (Eq, Ord, Show)
+pattern ImdbId :: Text -> ImdbId
+pattern ImdbId id <- RealImdbId id
+{-# COMPLETE ImdbId #-}
 mkImdbId :: Text -> ImdbId
-mkImdbId t = ImdbId $ orError [i|<#{t}> is not a valid IMDB Movie ID|] $ check (("tt" ==) . Text.take 2) t
+mkImdbId = checkValidId startsWithTT "IMDB Movie" RealImdbId where startsWithTT = ("tt" ==) . Text.take 2

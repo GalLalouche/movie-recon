@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
 module Formatters where
@@ -6,7 +7,7 @@ module Formatters where
 import           Data.Foldable           (toList)
 import           Data.String.Interpolate (i)
 
-import           MovieDB.Types           (Movie(..), MovieId(..), Participation(..), ParticipationType(Actor), Person)
+import           MovieDB.Types           (Movie(..), pattern MovieId, Participation(..), ParticipationType(Actor), Person)
 import qualified MovieDB.Types           as Types
 import           OMDB                    (MovieScore(..), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
 import qualified OMDB
@@ -24,7 +25,7 @@ mkStringMovie (Movie (MovieId id) name date) ms = let
           RottenTomatoes -> "RT"
           Metacritic     -> "MC"
       in [i|#{score} #{shortSource}|]
-  in [i|#{id}\t#{name}\t#{date} #{scoreString}|]
+  in [i|#{id}\t#{name}\t#{date}\t#{scoreString}|]
 
 data FullMovieInfo = FullMovieInfo Movie [Participation] (Maybe MovieScores)
 mkFullMovieInfoString :: FullMovieInfo -> String

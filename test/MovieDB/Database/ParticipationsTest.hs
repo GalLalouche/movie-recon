@@ -16,13 +16,13 @@ import Test.Tasty.HUnit
 
 test_participations = [
     testCase "read after write" $ do
-      let actor1 = makePerson "actor1"
-      let actor2 = makePerson "actor2"
-      let actor3 = makePerson "actor3"
-      let director = makePerson "director"
-      let writer = makePerson "director"
-      let movie1 = makeMovie "movie1"
-      let movie2 = makeMovie "movie2"
+      let actor1 = makePerson "actor1" 1
+      let actor2 = makePerson "actor2" 2
+      let actor3 = makePerson "actor3" 3
+      let director = makePerson "director" 4
+      let writer = makePerson "director" 5
+      let movie1 = makeMovie "movie1" 6
+      let movie2 = makeMovie "movie2" 7
       res <- withTempDb $ do
         addValueEntry $ Participation director movie1 Director
         addValueEntry $ Participation writer movie2 Writer

@@ -1,7 +1,10 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs                #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, OverloadedStrings, QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell, TypeFamilies                                                     #-}
-
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module MovieDB.Database.Persons(
   init,
@@ -15,9 +18,8 @@ import Prelude                    hiding (id, init)
 
 import Common.Operators
 
-import MovieDB.Database.Common    (DbCall(..), DbPath(..), ExtractableId(..), ReadOnlyDatabase(..),
-                                   ReadWriteDatabase(..), insertOrVerify)
-import MovieDB.Types              (Person(..), PersonId(..))
+import MovieDB.Database.Common    (DbCall, DbPath(..), ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify)
+import MovieDB.Types              (Person(..), PersonId, mkPersonId)
 
 import Control.Arrow              ((&&&))
 import Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
@@ -29,6 +31,7 @@ import Data.Text                  (Text)
 import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert)
 import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
 import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 PersonRow
@@ -46,7 +49,7 @@ rowIso = iso fromPerson toPerson where
   fromPerson :: Person -> PersonRow
   fromPerson person = PersonRow (person ^. id ^. id) (person ^. name)
   toPerson :: PersonRow -> Person
-  toPerson (PersonRow id name) = Person (PersonId id) name
+  toPerson (PersonRow id name) = Person (mkPersonId id) name
 
 withMigration action = do
   dbPath <- path <$> ask
