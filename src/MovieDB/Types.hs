@@ -19,6 +19,10 @@ module MovieDB.Types(
   mkPersonId,
   mkMovieId,
   toCastAndCrew,
+  ExternalHost(..),
+  ExternalId,
+  pattern ExternalId,
+  toExternalId,
   ImdbId,
   pattern ImdbId,
   mkImdbId,
@@ -111,9 +115,26 @@ data Participation = Participation
   , participationType :: ParticipationType
   } deriving (Show, Eq, Ord)
 
+-- The only way to create an External ID is via toExternalId function.
+data ExternalHost = IMDB deriving (Eq, Ord, Show, Read)
+data ExternalId = RealExternalId
+  { _movie :: Movie
+  , _host :: ExternalHost
+  , _id :: Text
+  } deriving (Show, Eq, Ord)
+pattern ExternalId :: Movie -> ExternalHost -> Text -> ExternalId
+pattern ExternalId m h id <- RealExternalId m h id
+{-# COMPLETE ExternalId #-}
+
+class IsExternalId a where
+  toExternalId :: Movie -> a -> ExternalId
+
 newtype ImdbId = RealImdbId Text deriving (Eq, Ord, Show)
 pattern ImdbId :: Text -> ImdbId
 pattern ImdbId id <- RealImdbId id
 {-# COMPLETE ImdbId #-}
 mkImdbId :: Text -> ImdbId
 mkImdbId = checkValidId startsWithTT "IMDB Movie" RealImdbId where startsWithTT = ("tt" ==) . Text.take 2
+
+instance IsExternalId ImdbId where
+  toExternalId m (ImdbId id) = RealExternalId m IMDB id
