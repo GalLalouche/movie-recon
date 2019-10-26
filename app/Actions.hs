@@ -11,6 +11,7 @@ module Actions(
   updateScores
 ) where
 
+import           Data.Foldable                    (toList, traverse_)
 import           Data.List                        (sortOn)
 import qualified Data.Ord
 import           Data.String.Interpolate          (i)
@@ -24,9 +25,9 @@ import qualified MovieDB.Database.FollowedPersons as FP
 import qualified MovieDB.Database.Movies          as M
 import qualified MovieDB.Database.MovieScores     as MS
 import qualified MovieDB.Database.Participations  as P
-import           MovieDB.Types                    (FilteredMovie(..), Movie(..), MovieId(..), Participation(..), Person(..), mkMovieId)
+import           MovieDB.Types                    (FilteredMovie(..), Movie(..), Participation(..), Person(..), mkMovieId)
 import qualified MovieDB.Types                    as Types
-import           OMDB                             (MovieScore(..), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
+import           OMDB                             (MovieScore(_score), MovieScores)
 import qualified OMDB
 
 import           Control.Applicative              (liftA2)
@@ -36,21 +37,21 @@ import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT)
 import           Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
 import           Control.Monad.Trans.Reader       (ReaderT)
-import           Data.Foldable                    (toList, traverse_)
 
 import           Common.ExceptTUtils              (meither, toExcept)
-import           Common.Foldables                 (intercalate)
 import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators
 import           Common.Traversables              (traverseFproduct)
 
+import qualified Formatters                       as F
+
 
 type APIAndDB = ReaderT DbPath IO ()
+liftApi = liftIO
+
 getUnseenMovies :: DbCall [Movie]
 getUnseenMovies = M.allMovies >>= traverseFilter FM.isNotFiltered
-
-liftApi = liftIO
 
 updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = do
@@ -80,47 +81,24 @@ parseSeenMovies = do
       return $ FilteredMovie movie reason
     getValueOrError mid = orError [i|Could not find movie with ID <#{mid}>|] <$> runMaybeT (M.getValue mid)
 
-mkStringMovie :: Movie -> Maybe MovieScores -> String
-mkStringMovie (Movie (MovieId id) name date) ms = let
-    scoreString = maybe "No score" (toString . toList . OMDB._scores) ms
-    toString ms = [i|(#{intercalate ", " $ fmap aux ms})|]
-    aux (MovieScore source score) = let
-      shortSource = case source of
-        IMDB           -> "IMDB"
-        RottenTomatoes -> "RT"
-        Metacritic     -> "MC"
-      in [i|#{score} #{shortSource}|]
-  in [i|#{id}\t#{name}\t#{date} #{scoreString}|]
-
 printUnseenMovies :: Bool -> DbCall ()
 printUnseenMovies verbose = do
   movies <- getUnseenMovies
   extraInfo <- traverseFproduct getExtraInfo movies
-  let formattedMovies = map (`mkStringMovie` Nothing) movies
-  let formattedParticipations = map toString $ sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
+  let formattedMovies = map (`F.mkStringMovie` Nothing) movies
+  let formattedParticipations = map (F.mkFullMovieInfoString . toFullMovieInfo) $ sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
   liftIO $ putStr $ unlines $ if verbose then formattedParticipations else formattedMovies where
     getFollowedParticipations :: Movie -> DbCall [Participation]
     getFollowedParticipations = P.getParticipationsForMovie >=> traverseFilter (FP.isFollowed . Types.person)
-    getScores :: Movie -> DbCall (Maybe MovieScores)
-    getScores = runMaybeT . MS.movieScores
     getExtraInfo :: Movie -> DbCall ([Participation], Maybe MovieScores)
-    getExtraInfo = uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)
-    toString :: (Movie, ([Participation], Maybe MovieScores)) -> String
-    toString (m, (ps, ms)) = let
-        movieString = mkStringMovie m ms
-        participationStrings = map mkStringParticipation ps
-      in unlines $ movieString : participationStrings where
-      mkStringParticipation (Participation p _ pt) = let
-          maybeRole = case pt of
-            Types.Actor -> ""
-            e           -> [i| (#{e})|]
-          name = Types._name (p :: Person)
-        in [i|\t#{name}#{maybeRole}|]
+    getExtraInfo = let
+        getScores = runMaybeT . MS.movieScores
+      in uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)
+    toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
     sorter :: Maybe MovieScores -> Double
-    sorter = mapMonoid (toList . OMDB._scores) >$> _score .> average
-    -- TODO move to Common
-    average v = if null v then 0 else fromIntegral (sum v) / fromIntegral (length v)
-
+    sorter = mapMonoid (toList . OMDB._scores) >$> _score .> average where
+      -- TODO move to Common
+      average v = if null v then 0 else fromIntegral (sum v) / fromIntegral (length v)
 
 updateScores :: APIAndDB
 updateScores = traverse_ updateScore =<< M.allMovies where
