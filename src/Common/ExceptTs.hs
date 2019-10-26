@@ -1,4 +1,4 @@
-module Common.ExceptTUtils where
+module Common.ExceptTs where
 
 import Data.Either.Combinators    (maybeToRight)
 

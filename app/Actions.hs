@@ -38,7 +38,7 @@ import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT)
 import           Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
 import           Control.Monad.Trans.Reader       (ReaderT)
 
-import           Common.ExceptTUtils              (meither, toExcept)
+import           Common.ExceptTs                  (meither, toExcept)
 import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators

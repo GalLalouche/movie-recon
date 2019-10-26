@@ -6,7 +6,7 @@ import MovieDB.Database.Movies         ()
 import MovieDB.Database.Participations
 import MovieDB.Types                   (CastAndCrew(..), Participation(..), ParticipationType(Actor, Director, Writer))
 
-import Common.MaybeTUtils              (fromJust)
+import Common.MaybeTs                  (fromJust)
 
 import Common.TestCommon               ((*?=))
 import MovieDB.Database.TestCommon     (makeMovie, makePerson, withTempDb)

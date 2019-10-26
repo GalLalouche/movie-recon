@@ -1,9 +1,9 @@
-module Common.MaybeTUtilsTest where
+module Common.MaybeTsTest where
 
-import Common.MaybeTUtils        (fromList)
+import Common.MaybeTs            (fromList)
+import Common.TestCommon         (Box(..))
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.List.NonEmpty        (NonEmpty((:|)))
-import Common.TestCommon (Box(..))
 
 import Test.Tasty
 import Test.Tasty.HUnit

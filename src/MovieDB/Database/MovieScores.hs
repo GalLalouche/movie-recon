@@ -17,7 +17,7 @@ module MovieDB.Database.MovieScores(
 
 import           Prelude                    hiding (init)
 
-import           Data.Foldable              (toList)
+import           Data.Foldable              (toList, traverse_)
 import qualified Data.Map                   as Map (assocs)
 import qualified Data.Set                   as Set (fromList)
 
@@ -29,14 +29,13 @@ import           OMDB                       (MovieScore(..), MovieScores(..), So
 import           Control.Arrow              ((&&&))
 import           Control.Monad.Trans.Maybe  (MaybeT(..))
 import           Control.Monad.Trans.Reader (ask)
-import           Data.Foldable              (traverse_)
-
-import qualified Common.Maps                as Maps
-import           Common.MaybeTUtils         (isJust)
 
 import           Database.Persist.Sql       (Filter, deleteWhere, entityVal, insert, selectList, (==.))
 import           Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
 import           Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
+import qualified Common.Maps                as Maps
+import           Common.MaybeTs             (isJust)
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|

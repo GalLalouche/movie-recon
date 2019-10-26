@@ -1,4 +1,4 @@
-module Common.MaybeTUtils where
+module Common.MaybeTs where
 
 import           Common.Operators
 

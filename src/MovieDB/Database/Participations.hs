@@ -26,7 +26,7 @@ import Control.Monad.Trans.Reader (ask)
 
 import Common.Foldables           (mapHeadOrElse)
 
-import Common.MaybeTUtils         (fromList)
+import Common.MaybeTs         (fromList)
 import Common.Operators
 
 import MovieDB.Database.Common    (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
