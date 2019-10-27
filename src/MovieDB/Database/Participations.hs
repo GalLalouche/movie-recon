@@ -40,7 +40,7 @@ import Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-ParticipationRow
+ParticipationRow sql=participation
   personId  PersonRowId
   movieId   MovieRowId
   type      ParticipationType

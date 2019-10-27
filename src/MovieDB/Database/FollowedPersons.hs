@@ -30,7 +30,7 @@ import Database.Persist.Sqlite    (runMigrationSilent)
 import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-FollowedPersons
+FollowedPerson
   personId        PersonRowId
   UniquePersonId  personId
 |]
@@ -38,13 +38,13 @@ FollowedPersons
 init :: DbCall ()
 init = void $ runMigrationSilent migrateTables
 
-passFilter = [] :: [Filter FollowedPersons]
+passFilter = [] :: [Filter FollowedPerson]
 
 clear :: DbCall ()
 clear = deleteWhere passFilter
 
-addFollowedPerson :: PersonRowable m => m -> DbCall FollowedPersonsId
-addFollowedPerson = toPersonRowId >=> (insert . FollowedPersons)
+addFollowedPerson :: PersonRowable m => m -> DbCall FollowedPersonId
+addFollowedPerson = toPersonRowId >=> (insert . FollowedPerson)
 
 removeFollowedPerson :: PersonRowable m => m -> DbCall ()
 removeFollowedPerson = toPersonRowId >=> (deleteBy . UniquePersonId)
@@ -54,5 +54,5 @@ isFollowed = toPersonRowId >=> (fmap isJust . getBy . UniquePersonId)
 
 allFollowedPersons :: DbCall [Person]
 allFollowedPersons = do
-  ids <- fmap (followedPersonsPersonId . entityVal) <$> selectList passFilter []
+  ids <- fmap (followedPersonPersonId . entityVal) <$> selectList passFilter []
   traverse getValueByRowId ids

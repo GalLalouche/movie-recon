@@ -43,7 +43,7 @@ import Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-MovieRow
+MovieRow sql=movie
   movieId         Text
   UniqueMovieId   movieId
   name            Text

@@ -39,7 +39,7 @@ import           Common.MaybeTs            (isJust)
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-MovieScoreRow
+MovieScoreRow sql=movie_score
   movieId         MovieRowId
   source          Source
   score           Int

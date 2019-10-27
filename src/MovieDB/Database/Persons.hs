@@ -35,7 +35,7 @@ import Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-PersonRow
+PersonRow sql=person
   personId        Text
   UniquePersonId  personId
   name            Text

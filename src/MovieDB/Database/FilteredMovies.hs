@@ -39,7 +39,7 @@ import Database.Persist.TH      (mkMigrate, mkPersist, persistLowerCase, share, 
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-FilteredMovieRow
+FilteredMovieRow sql=filtered_movie
   movieId         MovieRowId
   reason          FilterReason
   UniqueMovieId   movieId
