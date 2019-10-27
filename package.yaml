@@ -41,6 +41,8 @@ dependencies:
 - cmdargs
 - regex-compat
 - either
+- monad-logger
+- resourcet
 
 library:
   source-dirs: src

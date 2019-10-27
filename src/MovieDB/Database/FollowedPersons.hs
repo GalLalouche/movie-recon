@@ -1,5 +1,9 @@
-{-# LANGUAGE FlexibleContexts, GADTs, GeneralizedNewtypeDeriving, MultiParamTypeClasses, QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell, TypeFamilies                                                           #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module MovieDB.Database.FollowedPersons(
   init,
@@ -12,18 +16,17 @@ module MovieDB.Database.FollowedPersons(
 
 import Prelude                    hiding (init)
 
-import Common.Operators
+import Data.Maybe                 (isJust)
 
-import MovieDB.Database.Common    (DbCall, getValueByRowId, path)
+import Control.Monad              ((>=>))
+import Data.Functor               (void)
+
+import MovieDB.Database.Common    (DbCall, getValueByRowId)
 import MovieDB.Database.Persons   (PersonRowId, PersonRowable, toPersonRowId)
 import MovieDB.Types              (Person)
 
-import Control.Monad              ((>=>))
-import Control.Monad.Trans.Reader (ask)
-import Data.Maybe                 (isJust)
-
 import Database.Persist.Sql       (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
-import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
+import Database.Persist.Sqlite    (runMigrationSilent)
 import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -32,28 +35,24 @@ FollowedPersons
   UniquePersonId  personId
 |]
 
-withMigration action = do
-  dbPath <- path <$> ask
-  runSqlite dbPath (runMigrationSilent migrateTables >> action)
-
-
-init :: DbCall()
-init = withMigration $ return ()
+init :: DbCall ()
+init = void $ runMigrationSilent migrateTables
 
 passFilter = [] :: [Filter FollowedPersons]
-clear :: DbCall()
-clear = withMigration $ deleteWhere passFilter
+
+clear :: DbCall ()
+clear = deleteWhere passFilter
 
 addFollowedPerson :: PersonRowable m => m -> DbCall FollowedPersonsId
-addFollowedPerson = toPersonRowId >=> (withMigration . insert . FollowedPersons)
+addFollowedPerson = toPersonRowId >=> (insert . FollowedPersons)
 
 removeFollowedPerson :: PersonRowable m => m -> DbCall ()
-removeFollowedPerson = toPersonRowId >=> (withMigration . deleteBy . UniquePersonId)
+removeFollowedPerson = toPersonRowId >=> (deleteBy . UniquePersonId)
 
 isFollowed :: PersonRowable m => m -> DbCall Bool
-isFollowed = toPersonRowId >=> (fmap isJust . withMigration . getBy . UniquePersonId)
+isFollowed = toPersonRowId >=> (fmap isJust . getBy . UniquePersonId)
 
 allFollowedPersons :: DbCall [Person]
 allFollowedPersons = do
-  ids <- fmap (followedPersonsPersonId . entityVal) <$> withMigration (selectList passFilter [])
+  ids <- fmap (followedPersonsPersonId . entityVal) <$> selectList passFilter []
   traverse getValueByRowId ids

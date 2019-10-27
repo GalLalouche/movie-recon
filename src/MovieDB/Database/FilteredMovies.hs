@@ -19,22 +19,24 @@ module MovieDB.Database.FilteredMovies(
   allFilteredMovies,
 ) where
 
-import Prelude                    hiding (id, init)
+import Prelude                  hiding (id, init)
 
-import MovieDB.Database.Common    (DbCall, DbPath(..), getValueByRowId)
-import MovieDB.Database.Movies    (MovieRowId, MovieRowable, toMovieRowId)
-import MovieDB.Database.TypesTH   ()
-import MovieDB.Types              (FilterReason, FilteredMovie(..))
+import Data.Maybe               (isJust)
 
-import Control.Monad              ((>=>))
-import Control.Monad.Trans.Reader (ask)
-import Data.Maybe                 (isJust)
+import Control.Monad            ((>=>))
+import Data.Functor             (void)
+
+import MovieDB.Database.Common  (DbCall, getValueByRowId)
+import MovieDB.Database.Movies  (MovieRowId, MovieRowable, toMovieRowId)
+import MovieDB.Database.TypesTH ()
+import MovieDB.Types            (FilterReason, FilteredMovie(..))
 
 import Common.Operators
 
-import Database.Persist.Sql       (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
-import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
-import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql     (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
+import Database.Persist.Sqlite  (runMigrationSilent)
+import Database.Persist.TH      (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 FilteredMovieRow
@@ -43,38 +45,35 @@ FilteredMovieRow
   UniqueMovieId   movieId
 |]
 
-withMigration action = do
-  dbPath <- path <$> ask
-  runSqlite dbPath (runMigrationSilent migrateTables >> action)
-
-init :: DbCall()
-init = withMigration $ return ()
+init :: DbCall ()
+init = void $ runMigrationSilent migrateTables
 
 passFilter = [] :: [Filter FilteredMovieRow]
 
-clear :: DbCall()
-clear = withMigration $ deleteWhere passFilter
+clear :: DbCall ()
+clear = deleteWhere passFilter
+
 
 instance MovieRowable FilteredMovie where
   toMovieRowId = toMovieRowId . _movie
 
 addFilteredMovie :: FilteredMovie -> DbCall FilteredMovieRowId
-addFilteredMovie = toRow >=> (withMigration . insert) where
+addFilteredMovie = toRow >=> insert where
   toRow :: FilteredMovie -> DbCall FilteredMovieRow
   toRow fm = FilteredMovieRow <$> toMovieRowId fm <*> return (_reason fm)
 
 removeFilteredMovie :: FilteredMovie -> DbCall ()
-removeFilteredMovie = toMovieRowId >=> (withMigration . deleteBy . UniqueMovieId)
+removeFilteredMovie = toMovieRowId >=> (deleteBy . UniqueMovieId)
 
 isFiltered :: MovieRowable m => m -> DbCall Bool
-isFiltered = toMovieRowId >=> (fmap isJust . withMigration . getBy . UniqueMovieId)
+isFiltered = toMovieRowId >=> (fmap isJust . getBy . UniqueMovieId)
 
 isNotFiltered :: MovieRowable m => m -> DbCall Bool
 isNotFiltered = not <$< isFiltered
 
 allFilteredMovies :: DbCall [FilteredMovie]
 allFilteredMovies = do
-  rows <- fmap entityVal <$> withMigration (selectList passFilter [])
+  rows <- fmap entityVal <$> selectList passFilter []
   let ids = map filteredMovieRowMovieId rows
   let reasons = map filteredMovieRowReason rows
   movies <- traverse getValueByRowId ids

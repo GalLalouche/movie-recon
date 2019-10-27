@@ -1,8 +1,8 @@
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-import           MovieDB.Database.Common    (DbPath(..))
+import           MovieDB.Database.Common    (DbCall, DbPath(..), runDbCall)
 
-import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
+import           Control.Monad.Trans.Reader (runReaderT)
 
 import qualified Actions
 import qualified Config
@@ -10,18 +10,17 @@ import qualified Config
 
 dbPath = DbPath "db.sqlite"
 
-withDbPath :: Monad m => ReaderT DbPath m a -> m a
-withDbPath = flip runReaderT dbPath
+withDb :: DbCall a -> IO a
+withDb = flip runDbCall dbPath
 
 withBoth :: Actions.APIAndDB -> IO ()
-withBoth = withDbPath
-
+withBoth = flip runReaderT dbPath
 
 main = do
   args <- Config.parseConfig
   case args of
-    (Config.GetUnseen verbose) -> withDbPath $ Actions.printUnseenMovies verbose
-    Config.UpdateSeen          -> withDbPath Actions.parseSeenMovies
+    (Config.GetUnseen verbose) -> withDb $ Actions.printUnseenMovies verbose
+    Config.UpdateSeen          -> withDb Actions.parseSeenMovies
     Config.UpdateIndex         -> withBoth Actions.updateMoviesForAllFollowedPersons
     Config.UpdateScores        -> withBoth Actions.updateScores
     (Config.AddPerson url)     -> withBoth $ Actions.addFollowedPerson url

@@ -19,25 +19,25 @@ module MovieDB.Database.Participations(
   castAndCrew,
 ) where
 
-import Prelude                    hiding (init)
+import Prelude                   hiding (init)
 
-import Control.Monad.Trans.Maybe  (MaybeT(..), runMaybeT)
-import Control.Monad.Trans.Reader (ask)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import Data.Functor              (void)
 
-import Common.Foldables           (mapHeadOrElse)
+import MovieDB.Database.Common   (DbCall, DbMaybe, getValueByRowId, insertOrVerify)
+import MovieDB.Database.Movies   (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import MovieDB.Database.Persons  (PersonRowId, PersonRowable, toPersonRowId)
+import MovieDB.Database.TypesTH  ()
+import MovieDB.Types             (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
-import Common.MaybeTs         (fromList)
+import Database.Persist.Sql      (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
+import Database.Persist.Sqlite   (runMigrationSilent)
+import Database.Persist.TH       (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
+import Common.Foldables          (mapHeadOrElse)
+import Common.MaybeTs            (fromList)
 import Common.Operators
 
-import MovieDB.Database.Common    (DbCall, DbMaybe, getValueByRowId, insertOrVerify, path)
-import MovieDB.Database.Movies    (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import MovieDB.Database.Persons   (PersonRowId, PersonRowable, toPersonRowId)
-import MovieDB.Database.TypesTH   ()
-import MovieDB.Types              (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
-
-import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
-import Database.Persist.Sqlite    (runMigrationSilent, runSqlite)
-import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 ParticipationRow
@@ -47,24 +47,20 @@ ParticipationRow
   ParticipationUniqueness personId movieId type
 |]
 
-withMigration action = do
-  dbPath <- path <$> ask
-  runSqlite dbPath (runMigrationSilent migrateTables >> action)
-
-
-init :: DbCall()
-init = withMigration $ return ()
+init :: DbCall ()
+init = void $ runMigrationSilent migrateTables
 
 clear :: DbCall()
-clear = withMigration $ deleteWhere ([] :: [Filter ParticipationRow])
+clear = deleteWhere ([] :: [Filter ParticipationRow])
+
 
 getEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbMaybe ParticipationRowId
-getEntry = fmap entityKey . MaybeT . withMigration . getBy ..: ParticipationUniqueness
+getEntry = fmap entityKey . MaybeT . getBy ..: ParticipationUniqueness
 
 addEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbCall ParticipationRowId
 addEntry p m pt = do
   existingId <- runMaybeT $ getEntry p m pt
-  mapHeadOrElse return (withMigration $ insert $ ParticipationRow p m pt) existingId
+  mapHeadOrElse return (insert $ ParticipationRow p m pt) existingId
 
 addValueEntry :: Participation -> DbCall ParticipationRowId
 addValueEntry (Participation person movie pt) = do
@@ -78,7 +74,7 @@ toParticipation (ParticipationRow pid mid pt) =
 
 participationsAux column rowIdExtractor value = do
   rowId <- rowIdExtractor value
-  result <- withMigration $ map entityVal <$> selectList [column ==. rowId] []
+  result <- map entityVal <$> selectList [column ==. rowId] []
   traverse toParticipation result
 
 getParticipationsForMovie :: MovieRowable m => m -> DbCall [Participation]
