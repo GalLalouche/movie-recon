@@ -9,7 +9,7 @@ module MovieDB.Database.TestCommon (
 import Data.Text                (Text, pack)
 import Data.Time                (fromGregorian)
 
-import MovieDB.Database.Common  (DbCall, DbPath(..), runDbCall)
+import MovieDB.Database         (DbCall, DbPath(..), runDbCall)
 import MovieDB.Database.Movies  as Movies (init)
 import MovieDB.Database.Persons as Persons (init)
 import MovieDB.Types            (Movie(..), Person(..), mkMovieId, mkPersonId)

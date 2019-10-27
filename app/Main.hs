@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import           MovieDB.Database.Common    (DbCall, DbPath(..), runDbCall)
+import           MovieDB.Database           (DbCall, DbPath(..), runDbCall)
 
 import           Control.Monad.Trans.Reader (runReaderT)
 

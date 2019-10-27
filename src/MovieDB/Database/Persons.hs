@@ -2,6 +2,7 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -14,22 +15,23 @@ module MovieDB.Database.Persons(
   toPersonRowId,
 ) where
 
-import Prelude                    hiding (id, init)
+import Prelude                          hiding (id, init)
 
-import Data.Maybe                 (fromJust)
-import Data.Text                  (Text)
+import Data.Maybe                       (fromJust)
+import Data.Text                        (Text)
 
-import Control.Arrow              ((&&&))
-import Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
-import Data.Functor (void)
-import Control.Monad.Trans.Maybe  (MaybeT(..))
+import Control.Arrow                    ((&&&))
+import Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
+import Control.Monad.Trans.Maybe        (MaybeT(..))
+import Data.Functor                     (void)
 
-import MovieDB.Database.Common    (DbCall, ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify)
-import MovieDB.Types              (Person(..), PersonId, mkPersonId)
+import MovieDB.Database                 (DbCall)
+import MovieDB.Database.Internal.Common (ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify)
+import MovieDB.Types                    (Person(..), PersonId, mkPersonId)
 
-import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert)
-import Database.Persist.Sqlite    (runMigrationSilent)
-import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert)
+import Database.Persist.Sqlite          (runMigrationSilent)
+import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import Common.Operators
 

@@ -15,27 +15,28 @@ module MovieDB.Database.MovieScores(
   allMovieScores,
 ) where
 
-import           Prelude                   hiding (init)
+import           Prelude                           hiding (init)
 
-import           Data.Foldable             (toList, traverse_)
-import qualified Data.Map                  as Map (assocs)
-import qualified Data.Set                  as Set (fromList)
+import           Data.Foldable                     (toList, traverse_)
+import qualified Data.Map                          as Map (assocs)
+import qualified Data.Set                          as Set (fromList)
 
-import           Control.Arrow             ((&&&))
-import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Data.Functor              (void)
+import           Control.Arrow                     ((&&&))
+import           Control.Monad.Trans.Maybe         (MaybeT(..))
+import           Data.Functor                      (void)
 
-import           MovieDB.Database.Common   (DbCall, DbMaybe, getValueByRowId)
-import           MovieDB.Database.Movies   (MovieRowId, MovieRowable, toMovieRowId)
-import           MovieDB.Database.TypesTH  ()
-import           OMDB                      (MovieScore(..), MovieScores(..), Source)
+import           MovieDB.Database                  (DbCall, DbMaybe)
+import           MovieDB.Database.Internal.Common  (getValueByRowId)
+import           MovieDB.Database.Internal.TypesTH ()
+import           MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
+import           OMDB                              (MovieScore(..), MovieScores(..), Source)
 
-import           Database.Persist.Sql      (Filter, deleteWhere, entityVal, insert, selectList, (==.))
-import           Database.Persist.Sqlite   (runMigrationSilent)
-import           Database.Persist.TH       (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import           Database.Persist.Sql              (Filter, deleteWhere, entityVal, insert, selectList, (==.))
+import           Database.Persist.Sqlite           (runMigrationSilent)
+import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
-import qualified Common.Maps               as Maps
-import           Common.MaybeTs            (isJust)
+import qualified Common.Maps                       as Maps
+import           Common.MaybeTs                    (isJust)
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|

@@ -19,23 +19,24 @@ module MovieDB.Database.Participations(
   castAndCrew,
 ) where
 
-import Prelude                   hiding (init)
+import Prelude                           hiding (init)
 
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
-import Data.Functor              (void)
+import Control.Monad.Trans.Maybe         (MaybeT(..), runMaybeT)
+import Data.Functor                      (void)
 
-import MovieDB.Database.Common   (DbCall, DbMaybe, getValueByRowId, insertOrVerify)
-import MovieDB.Database.Movies   (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import MovieDB.Database.Persons  (PersonRowId, PersonRowable, toPersonRowId)
-import MovieDB.Database.TypesTH  ()
-import MovieDB.Types             (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
+import MovieDB.Database                  (DbCall, DbMaybe)
+import MovieDB.Database.Internal.Common  (getValueByRowId, insertOrVerify)
+import MovieDB.Database.Internal.TypesTH ()
+import MovieDB.Database.Movies           (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import MovieDB.Database.Persons          (PersonRowId, PersonRowable, toPersonRowId)
+import MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
-import Database.Persist.Sql      (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
-import Database.Persist.Sqlite   (runMigrationSilent)
-import Database.Persist.TH       (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
+import Database.Persist.Sqlite           (runMigrationSilent)
+import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
-import Common.Foldables          (mapHeadOrElse)
-import Common.MaybeTs            (fromList)
+import Common.Foldables                  (mapHeadOrElse)
+import Common.MaybeTs                    (fromList)
 import Common.Operators
 
 

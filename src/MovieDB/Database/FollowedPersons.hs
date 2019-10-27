@@ -14,20 +14,22 @@ module MovieDB.Database.FollowedPersons(
   allFollowedPersons
 ) where
 
-import Prelude                    hiding (init)
+import Prelude                          hiding (init)
 
-import Data.Maybe                 (isJust)
+import Data.Maybe                       (isJust)
 
-import Control.Monad              ((>=>))
-import Data.Functor               (void)
+import Control.Monad                    ((>=>))
+import Data.Functor                     (void)
 
-import MovieDB.Database.Common    (DbCall, getValueByRowId)
-import MovieDB.Database.Persons   (PersonRowId, PersonRowable, toPersonRowId)
-import MovieDB.Types              (Person)
+import MovieDB.Database                 (DbCall)
+import MovieDB.Database.Internal.Common (getValueByRowId)
+import MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
+import MovieDB.Types                    (Person)
 
-import Database.Persist.Sql       (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
-import Database.Persist.Sqlite    (runMigrationSilent)
-import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql             (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
+import Database.Persist.Sqlite          (runMigrationSilent)
+import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 FollowedPerson

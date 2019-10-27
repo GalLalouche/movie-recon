@@ -1,36 +1,20 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE LiberalTypeSynonyms    #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE QuasiQuotes            #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE LiberalTypeSynonyms    #-}
 
-module MovieDB.Database.Common where
+module MovieDB.Database.Internal.Common where
 
-import Data.Functor               (($>))
-import Data.String.Interpolate    (i)
-import Data.Text                  (Text)
+import Data.String.Interpolate   (i)
 
-import Control.Monad.IO.Class     (liftIO)
-import Control.Monad.Trans.Maybe  (MaybeT, runMaybeT)
-import Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
-import Control.Monad.Trans.Resource (ResourceT)
-import Control.Monad.Logger (NoLoggingT)
+import Control.Monad.IO.Class    (liftIO)
+import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
+import Data.Functor              (($>))
 
-import Database.Persist.Sql (SqlBackend)
-import Database.Persist.Sqlite (runSqlite)
+import MovieDB.Database          (DbCall, DbMaybe)
 
-
-type DbCall = ReaderT SqlBackend (NoLoggingT (ResourceT IO))
-type DbMaybe = MaybeT DbCall
-newtype DbPath = DbPath { path :: Text }
-type RunDB = ReaderT DbPath IO
-
-withDbPath :: DbCall a -> ReaderT DbPath IO a
-withDbPath action = path <$> ask >>= liftIO . flip runSqlite action
-
-runDbCall :: DbCall a -> DbPath -> IO a
-runDbCall = runReaderT . withDbPath
 
 class ExtractableId a typeId | a -> typeId where
   extractId :: a -> typeId

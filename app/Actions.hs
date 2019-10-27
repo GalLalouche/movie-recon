@@ -27,7 +27,7 @@ import           Control.Monad.Trans.Reader       (ReaderT)
 
 import           APIs                             (Url(..))
 import qualified MovieDB.API                      as API
-import           MovieDB.Database.Common          (DbCall, DbPath, withDbPath)
+import           MovieDB.Database                 (DbCall, DbPath, withDbPath)
 import qualified MovieDB.Database.FilteredMovies  as FilteredMovies
 import qualified MovieDB.Database.FollowedPersons as FollowedPersons
 import qualified MovieDB.Database.Movies          as Movies

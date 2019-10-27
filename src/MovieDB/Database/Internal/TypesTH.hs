@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module MovieDB.Database.TypesTH where
+module MovieDB.Database.Internal.TypesTH where
 
 import Database.Persist.TH (derivePersistField)
 import MovieDB.Types       (FilterReason, ParticipationType)

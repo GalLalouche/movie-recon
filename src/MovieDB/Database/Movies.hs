@@ -2,6 +2,7 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -20,24 +21,25 @@ module MovieDB.Database.Movies(
   toMaybeMovieRowId,
 ) where
 
-import Prelude                    hiding (id, init)
+import Prelude                          hiding (id, init)
 
-import Data.Maybe                 (fromJust)
-import Data.Text                  (Text)
-import Data.Time                  (Day)
+import Data.Maybe                       (fromJust)
+import Data.Text                        (Text)
+import Data.Time                        (Day)
 
-import Control.Arrow              ((&&&))
-import Data.Functor (void)
-import Control.Lens               (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
-import Control.Monad.Trans.Class  (lift)
-import Control.Monad.Trans.Maybe  (MaybeT(..))
+import Control.Arrow                    ((&&&))
+import Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
+import Control.Monad.Trans.Class        (lift)
+import Control.Monad.Trans.Maybe        (MaybeT(..))
+import Data.Functor                     (void)
 
-import MovieDB.Database.Common    (DbCall, DbMaybe, ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
-import MovieDB.Types              (Movie(..), MovieId, mkMovieId)
+import MovieDB.Database                 (DbCall, DbMaybe)
+import MovieDB.Database.Internal.Common (ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
+import MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
 
-import Database.Persist.Sql       (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
-import Database.Persist.Sqlite    (runMigrationSilent)
-import Database.Persist.TH        (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
+import Database.Persist.Sqlite          (runMigrationSilent)
+import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import Common.Operators
 

@@ -19,23 +19,24 @@ module MovieDB.Database.FilteredMovies(
   allFilteredMovies,
 ) where
 
-import Prelude                  hiding (id, init)
+import Prelude                           hiding (id, init)
 
-import Data.Maybe               (isJust)
+import Data.Maybe                        (isJust)
 
-import Control.Monad            ((>=>))
-import Data.Functor             (void)
+import Control.Monad                     ((>=>))
+import Data.Functor                      (void)
 
-import MovieDB.Database.Common  (DbCall, getValueByRowId)
-import MovieDB.Database.Movies  (MovieRowId, MovieRowable, toMovieRowId)
-import MovieDB.Database.TypesTH ()
-import MovieDB.Types            (FilterReason, FilteredMovie(..))
+import MovieDB.Database                  (DbCall)
+import MovieDB.Database.Internal.Common  (getValueByRowId)
+import MovieDB.Database.Internal.TypesTH ()
+import MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
+import MovieDB.Types                     (FilterReason, FilteredMovie(..))
 
 import Common.Operators
 
-import Database.Persist.Sql     (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
-import Database.Persist.Sqlite  (runMigrationSilent)
-import Database.Persist.TH      (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import Database.Persist.Sql              (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
+import Database.Persist.Sqlite           (runMigrationSilent)
+import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
