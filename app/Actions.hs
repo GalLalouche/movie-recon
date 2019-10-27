@@ -8,7 +8,8 @@ module Actions(
   addFollowedPerson,
   parseSeenMovies,
   printUnseenMovies,
-  updateScores
+  updateScores,
+  initDatabases,
 ) where
 
 import           Data.Foldable                    (toList, traverse_)
@@ -28,11 +29,13 @@ import           Control.Monad.Trans.Reader       (ReaderT)
 import           APIs                             (Url(..))
 import qualified MovieDB.API                      as API
 import           MovieDB.Database                 (DbCall, DbPath, withDbPath)
+import qualified MovieDB.Database.ExternalIds     as ExternalIds
 import qualified MovieDB.Database.FilteredMovies  as FilteredMovies
 import qualified MovieDB.Database.FollowedPersons as FollowedPersons
 import qualified MovieDB.Database.Movies          as Movies
 import qualified MovieDB.Database.MovieScores     as MovieScores
 import qualified MovieDB.Database.Participations  as Participations
+import qualified MovieDB.Database.Persons         as Persons
 import           MovieDB.Types                    (FilteredMovie(..), Movie(..), Participation(..), Person(..), mkMovieId)
 import qualified MovieDB.Types                    as Types
 import           OMDB                             (MovieScore(_score), MovieScores(_scores))
@@ -111,3 +114,6 @@ updateScores = withDbPath $ traverse_ updateScore =<< Movies.allMovies where
     id <- toExcept [i|No IMDB ID for <#{movie}>!|] (API.imdbId movie)
     toExcept [i|No scores <#{movie}>!|] (OMDB.getMovieScores movie id)
   handle = meither (liftIO . putStrLn) MovieScores.addMovieScores
+
+initDatabases :: DbCall()
+initDatabases = Movies.init >> Persons.init >> Participations.init >> FilteredMovies.init >> MovieScores.init >> FollowedPersons.init >> ExternalIds.init

@@ -4,17 +4,19 @@
 
 module Config(Config(..), parseConfig) where
 
-import System.Console.CmdArgs          (Data, Typeable, argPos, cmdArgs, def, help, modes, typ, (&=))
+import System.Console.CmdArgs (Data, Typeable, argPos, cmdArgs, def, help, modes, typ, (&=))
 
 
 data Config =
-    UpdateSeen
+      Init
+    | UpdateSeen
     | GetUnseen {verbose :: Bool}
     | UpdateIndex
     | UpdateScores
     | AddPerson {url :: String}
     deriving (Show, Data, Typeable, Eq)
 
+initDatabases = Init &= help "Initializes all databases"
 updateSeen = UpdateSeen &= help (
     "Reads a list of seen movie IDs to update seen movies from stdin.\n" ++
     "Every line should start with an I or S (Ignored or Seen), followed by an ID, " ++
@@ -31,4 +33,4 @@ addPerson = AddPerson {url = def &= argPos 0
     } &= help "Adds a followed person"
 
 parseConfig :: IO Config
-parseConfig = cmdArgs $ modes [updateSeen, getUnseen, updateIndex, updateScores, addPerson]
+parseConfig = cmdArgs $ modes [initDatabases, updateSeen, getUnseen, updateIndex, updateScores, addPerson]
