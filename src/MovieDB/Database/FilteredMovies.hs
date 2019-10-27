@@ -34,8 +34,7 @@ import MovieDB.Types                     (FilterReason, FilteredMovie(..))
 
 import Common.Operators
 
-import Database.Persist.Sql              (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, selectList)
-import Database.Persist.Sqlite           (runMigrationSilent)
+import Database.Persist.Sql              (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 

@@ -31,8 +31,7 @@ import           MovieDB.Database.Internal.TypesTH ()
 import           MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
 import           OMDB                              (MovieScore(..), MovieScores(..), Source)
 
-import           Database.Persist.Sql              (Filter, deleteWhere, entityVal, insert, selectList, (==.))
-import           Database.Persist.Sqlite           (runMigrationSilent)
+import           Database.Persist.Sql              (Filter, deleteWhere, entityVal, insert, runMigrationSilent, selectList, (==.))
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import qualified Common.Maps                       as Maps

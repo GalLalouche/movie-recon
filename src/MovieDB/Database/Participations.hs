@@ -31,8 +31,7 @@ import MovieDB.Database.Movies           (MaybeMovieRowable, MovieRowId, MovieRo
 import MovieDB.Database.Persons          (PersonRowId, PersonRowable, toPersonRowId)
 import MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
-import Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, selectList, (==.))
-import Database.Persist.Sqlite           (runMigrationSilent)
+import Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import Common.Foldables                  (mapHeadOrElse)

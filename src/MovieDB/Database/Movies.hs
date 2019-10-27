@@ -37,8 +37,7 @@ import MovieDB.Database                 (DbCall, DbMaybe)
 import MovieDB.Database.Internal.Common (ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
 import MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
 
-import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, selectList)
-import Database.Persist.Sqlite          (runMigrationSilent)
+import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, runMigrationSilent, selectList)
 import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import Common.Operators
