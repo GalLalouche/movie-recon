@@ -1,9 +1,11 @@
 module Common.IO where
 
-import Prelude hiding (catch)
-import System.Directory (removeFile, doesFileExist)
+import Data.Time         (Day, getCurrentTime)
+import Data.Time.Clock   (utctDay)
+
 import Control.Exception (catch, throwIO)
-import System.IO.Error (isDoesNotExistError)
+import System.Directory  (doesFileExist, removeFile)
+import System.IO.Error   (isDoesNotExistError)
 
 
 removeIfExists :: FilePath -> IO ()
@@ -17,3 +19,6 @@ createFileIfNotExists :: FilePath -> IO ()
 createFileIfNotExists file = do
   exists <- doesFileExist file
   if exists then return () else writeFile file ""
+
+getCurrentDate :: IO Day
+getCurrentDate = utctDay <$> getCurrentTime

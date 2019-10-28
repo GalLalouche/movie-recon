@@ -23,7 +23,7 @@ import           Text.InterpolatedString.Perl6    (qq)
 
 import           Control.Applicative              (liftA2)
 import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (unless, (>=>))
+import           Control.Monad                    (unless, (>=>), mfilter)
 import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT)
 import           Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
@@ -45,6 +45,7 @@ import           OMDB                             (MovieScore(_score), MovieScor
 import qualified OMDB
 
 import           Common.ExceptTs                  (meither, toExcept)
+import           Common.IO                        (getCurrentDate)
 import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators
@@ -64,7 +65,10 @@ updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = withDbPath $ do
   followedPersons <- FollowedPersons.allFollowedPersons
   participations <- liftApi $ fold <$> traverse API.personCredits followedPersons
-  traverse_ Participations.addValueEntry participations
+  currentDate <- liftIO getCurrentDate
+  let isReleased (Participation _ m _) = Types.isReleased currentDate m
+  let releasedParticipations = mfilter isReleased participations
+  traverse_ Participations.addValueEntry releasedParticipations
 
 addFollowedPerson :: Text -> APIAndDB
 addFollowedPerson url = withDbPath $ do

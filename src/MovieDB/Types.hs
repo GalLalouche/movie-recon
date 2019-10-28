@@ -11,6 +11,7 @@ module MovieDB.Types(
   MovieId,
   pattern MovieId,
   Movie(..),
+  isReleased,
   FilterReason(..),
   FilteredMovie(..),
   CastAndCrew(..),
@@ -80,6 +81,9 @@ data Movie = Movie
   , _name :: Text
   , _date :: Day
   } deriving (Show, Eq, Ord)
+
+isReleased :: Day -> Movie -> Bool
+isReleased today (Movie _ _ date) = date <= today
 
 data FilterReason = Ignored | Seen deriving (Show, Read, Eq, Ord)
 data FilteredMovie = FilteredMovie
