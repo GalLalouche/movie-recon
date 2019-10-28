@@ -1,6 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
 module Actions(
@@ -21,6 +21,7 @@ import qualified Data.Ord
 import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
 import           Data.Text.IO                     (putStrLn)
 import           Data.Vector                      (Vector)
+import qualified Data.Vector                      as Vector (fromList)
 import           Text.InterpolatedString.Perl6    (qq)
 
 import           Control.Applicative              (liftA2)
@@ -31,6 +32,7 @@ import           Control.Monad.Trans.Class        (lift)
 import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT, throwE)
 import           Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
 import           Control.Monad.Trans.Reader       (ReaderT)
+import           Data.Functor                     (void)
 
 import           APIs                             (Url(..))
 import qualified MovieDB.API                      as API
@@ -52,8 +54,10 @@ import           Common.IO                        (getCurrentDate)
 import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators
+import qualified Common.Sets                      as Sets (from)
 import           Common.Traversables              (traverseFproduct)
 import           Common.Vectors                   (sortOn)
+import qualified Common.Vectors                   as Vectors (from)
 
 import qualified Formatters                       as F
 
@@ -69,19 +73,28 @@ updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = withDbPath $ do
   followedPersons <- FollowedPersons.allFollowedPersons
   participations <- liftApi $ fold <$> traverse API.personCredits followedPersons
+  void $ filterReleasedAndSave participations
+filterReleasedAndSave :: Vector Participation -> DbCall (Vector Participation)
+filterReleasedAndSave ms = do
   currentDate <- liftIO getCurrentDate
   let isReleased (Participation _ m _) = Types.isReleased currentDate m
-  let releasedParticipations = mfilter isReleased participations
-  traverse_ Participations.addValueEntry releasedParticipations
+  let released = mfilter isReleased ms
+  traverse_ Participations.addValueEntry released
+  return released
 
 addFollowedPerson :: Text -> Bool -> APIAndDB
-addFollowedPerson url ignoreActing = withDbPath $ do
-  person <- liftApi $ API.personName $ Url url
-  _ <- liftIO $ putStrLn [qq|Adding <$person> and their credits...|]
-  _ <- FollowedPersons.addFollowedPerson ignoreActing person
-  participations <- liftApi $ API.personCredits person
-  traverse_ Participations.addValueEntry participations
-
+addFollowedPerson url ignoreActing = getPerson >>= getMovies >>= updateScoresForMovies where
+  getPerson = withDbPath $ do
+    person <- liftApi $ API.personName $ Url url
+    _ <- liftIO $ putStrLn [qq|Adding <$person> and their credits and scores...|]
+    _ <- FollowedPersons.addFollowedPerson ignoreActing person
+    return person
+  getMovies person = withDbPath $ do
+    participations <- liftApi $ API.personCredits person
+    releasedParticipations <- filterReleasedAndSave participations
+    return $ distinct $ fmap (Types.movie :: Participation -> Movie) releasedParticipations where
+      distinct = Vectors.from . Sets.from
+      
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do
   ls <- lines . pack <$> liftIO getContents
@@ -117,8 +130,9 @@ printUnseenMovies verbose = do
       average v = if null v then 0 else fromIntegral (sum v) / fromIntegral (length v)
 
 updateScores :: APIAndDB
-updateScores = withDbPath unfilteredMovies >>= traverse_ updateScore where
-  unfilteredMovies = Movies.allMovies >>= traverseFilter FilteredMovies.isNotFiltered
+updateScores = withDbPath Movies.allMovies >>= updateScoresForMovies
+updateScoresForMovies :: Vector Movie -> APIAndDB
+updateScoresForMovies = withDbPath . traverseFilter FilteredMovies.isNotFiltered >=> traverse_ updateScore where
   updateScore :: Movie -> APIAndDB
   updateScore movie = do
     hasScore <- withDbPath $ MovieScores.hasMovieScores movie
@@ -141,6 +155,6 @@ updateScores = withDbPath unfilteredMovies >>= traverse_ updateScore where
         fetchedId <- lift $ lift $ runMaybeT $ API.imdbId movie
         _ <- liftDbPath $ ExternalIds.addNullableExternalId movie Types.IMDB fetchedId
         ExceptT $ return $ maybeToRight [qq|No IMDB ID could be fetched for <$movie>! (caching...)|] fetchedId
-
+        
 initDatabases :: DbCall()
 initDatabases = Movies.init >> Persons.init >> Participations.init >> FilteredMovies.init >> MovieScores.init >> FollowedPersons.init >> ExternalIds.init
