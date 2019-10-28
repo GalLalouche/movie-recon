@@ -1,6 +1,27 @@
 {
   "cast": [
     {
+      "character": "Sam Fisher",
+      "credit_id": "52fe4b539251416c750ff61d",
+      "vote_count": 6,
+      "video": false,
+      "popularity": 2.464,
+      "original_language": "en",
+      "vote_average": 6.6,
+      "id": 145214,
+      "title": "Splinter Cell",
+      "original_title": "Splinter Cell",
+      "backdrop_path": null,
+      "genre_ids": [
+        28,
+        12,
+        80
+      ],
+      "adult": false,
+      "overview": "Based on the popular Tom Clancy video game series",
+      "poster_path": null
+    },
+    {
       "character": "Bruce Wayne / Batman",
       "credit_id": "52fe422fc3a36847f800aa01",
       "poster_path": "/kBf3g9crrADGMc2AMAMlLBgSm2h.jpg",

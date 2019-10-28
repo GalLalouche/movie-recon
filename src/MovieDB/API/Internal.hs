@@ -57,7 +57,7 @@ parsePersonCredits :: ObjectParser (Vector (Movie, ParticipationType))
 parsePersonCredits = fmapMaybes liftMaybe <$> parseCastAndCrew parseMovie where
   parseMovie = MaybeMovie <$> getId mkMovieId <*> str "title" <*> getDay
   getDay :: ObjectParser (Maybe Day)
-  getDay = str "release_date" <$$> mapIfOrNothing notNull (read . unpack)
+  getDay = runMaybeT $ (MaybeT $ strMaybe "release_date") >>=& mapIfOrNothing notNull (read . unpack)
   liftMaybe :: (MaybeMovie, ParticipationType) -> Maybe (Movie, ParticipationType)
   liftMaybe (MaybeMovie id name d, pt) = fmap (\d -> (Movie id name d, pt)) d
 
