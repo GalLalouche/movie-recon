@@ -24,4 +24,4 @@ main = do
     Config.UpdateSeen          -> withDb Actions.parseSeenMovies
     Config.UpdateIndex         -> withBoth Actions.updateMoviesForAllFollowedPersons
     Config.UpdateScores        -> withBoth Actions.updateScores
-    (Config.AddPerson url)     -> withBoth $ Actions.addFollowedPerson url
+    (Config.AddPerson url ignoreActing)     -> withBoth $ Actions.addFollowedPerson url ignoreActing

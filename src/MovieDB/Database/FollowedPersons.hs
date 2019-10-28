@@ -9,7 +9,6 @@ module MovieDB.Database.FollowedPersons(
   init,
   clear,
   addFollowedPerson,
-  removeFollowedPerson,
   isFollowed,
   allFollowedPersons
 ) where
@@ -26,15 +25,18 @@ import           Data.Functor                     (void)
 import           MovieDB.Database                 (DbCall)
 import           MovieDB.Database.Internal.Common (getValueByRowId)
 import           MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
-import           MovieDB.Types                    (Person)
+import           MovieDB.Types                    (ParticipationType(Actor), Person)
 
 import           Database.Persist.Sql             (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)
 import           Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
+import           Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
 FollowedPerson
   personId        PersonRowId
+  ignoreActing    Bool
   UniquePersonId  personId
 |]
 
@@ -46,14 +48,12 @@ passFilter = [] :: [Filter FollowedPerson]
 clear :: DbCall ()
 clear = deleteWhere passFilter
 
-addFollowedPerson :: PersonRowable m => m -> DbCall FollowedPersonId
-addFollowedPerson = toPersonRowId >=> (insert . FollowedPerson)
+addFollowedPerson :: PersonRowable p => Bool -> p -> DbCall FollowedPersonId
+addFollowedPerson ignoreActing = toPersonRowId >=> (insert . flip FollowedPerson ignoreActing)
 
-removeFollowedPerson :: PersonRowable m => m -> DbCall ()
-removeFollowedPerson = toPersonRowId >=> (deleteBy . UniquePersonId)
-
-isFollowed :: PersonRowable m => m -> DbCall Bool
-isFollowed = toPersonRowId >=> (fmap isJust . getBy . UniquePersonId)
+isFollowed :: PersonRowable m => ParticipationType -> m -> DbCall Bool
+isFollowed pt = toPersonRowId >=> getBy . UniquePersonId >$> any (aux . entityVal) where
+  aux (FollowedPerson _ ignoreActing) = pt /= Actor || not ignoreActing
 
 allFollowedPersons :: DbCall (Vector Person)
 allFollowedPersons = do

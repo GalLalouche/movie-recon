@@ -74,11 +74,11 @@ updateMoviesForAllFollowedPersons = withDbPath $ do
   let releasedParticipations = mfilter isReleased participations
   traverse_ Participations.addValueEntry releasedParticipations
 
-addFollowedPerson :: Text -> APIAndDB
-addFollowedPerson url = withDbPath $ do
+addFollowedPerson :: Text -> Bool -> APIAndDB
+addFollowedPerson url ignoreActing = withDbPath $ do
   person <- liftApi $ API.personName $ Url url
   _ <- liftIO $ putStrLn [qq|Adding <$person> and their credits...|]
-  _ <- FollowedPersons.addFollowedPerson person
+  _ <- FollowedPersons.addFollowedPerson ignoreActing person
   participations <- liftApi $ API.personCredits person
   traverse_ Participations.addValueEntry participations
 
@@ -104,7 +104,8 @@ printUnseenMovies verbose = do
   let formattedParticipations = F.mkFullMovieInfoString . toFullMovieInfo <$> sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
   liftIO $ putStrLn $ unlines $ toList $ if verbose then formattedParticipations else formattedMovies where
     getFollowedParticipations :: Movie -> DbCall (Vector Participation)
-    getFollowedParticipations = Participations.getParticipationsForMovie >=> traverseFilter (FollowedPersons.isFollowed . Types.person)
+    getFollowedParticipations = Participations.getParticipationsForMovie >=>
+        traverseFilter (uncurry FollowedPersons.isFollowed . (Types.participationType &&& Types.person))
     getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
     getExtraInfo = let
         getScores = runMaybeT . MovieScores.movieScores
