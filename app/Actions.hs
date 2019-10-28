@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
 module Actions(
@@ -14,6 +15,7 @@ module Actions(
 
 import           Prelude                          hiding (lines, putStrLn, unlines)
 
+import           Data.Either.Combinators          (maybeToRight)
 import           Data.Foldable                    (fold, toList, traverse_)
 import qualified Data.Ord
 import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
@@ -23,9 +25,10 @@ import           Text.InterpolatedString.Perl6    (qq)
 
 import           Control.Applicative              (liftA2)
 import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (unless, (>=>), mfilter)
+import           Control.Monad                    (mfilter, unless, (>=>))
 import           Control.Monad.IO.Class           (liftIO)
-import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT)
+import           Control.Monad.Trans.Class        (lift)
+import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT, throwE)
 import           Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
 import           Control.Monad.Trans.Reader       (ReaderT)
 
@@ -55,7 +58,8 @@ import           Common.Vectors                   (sortOn)
 import qualified Formatters                       as F
 
 
-type APIAndDB = ReaderT DbPath IO ()
+type IAPIAndDB = ReaderT DbPath IO
+type APIAndDB = IAPIAndDB ()
 liftApi = liftIO
 
 getUnseenMovies :: DbCall (Vector Movie)
@@ -112,16 +116,30 @@ printUnseenMovies verbose = do
       average v = if null v then 0 else fromIntegral (sum v) / fromIntegral (length v)
 
 updateScores :: APIAndDB
-updateScores = withDbPath $ traverse_ updateScore =<< Movies.allMovies where
+updateScores = withDbPath unfilteredMovies >>= traverse_ updateScore where
+  unfilteredMovies = Movies.allMovies >>= traverseFilter FilteredMovies.isNotFiltered
+  updateScore :: Movie -> APIAndDB
   updateScore movie = do
-    hasScore <- MovieScores.hasMovieScores movie
-    unless hasScore (handle $ mapExceptT liftIO $ fetchScores movie)
-  fetchScores :: Movie -> ExceptT Text IO MovieScores
+    hasScore <- withDbPath $ MovieScores.hasMovieScores movie
+    unless hasScore (handle $ fetchScores movie)
+  fetchScores :: Movie -> ExceptT Text IAPIAndDB MovieScores
   fetchScores movie = do
     _ <- liftIO $ putStrLn [qq|Fetching scores for <$movie>|]
-    id <- toExcept [qq|No IMDB ID for <$movie>!|] (API.imdbId movie)
-    toExcept [qq|No scores <$movie>!|] (OMDB.getMovieScores movie id)
-  handle = meither (liftIO . putStrLn) MovieScores.addMovieScores
+    id <- getImdbId movie
+    mapExceptT lift $ toExcept [qq|No scores <$movie>!|] (OMDB.getMovieScores movie id)
+  handle :: ExceptT Text IAPIAndDB MovieScores -> APIAndDB
+  handle = meither (liftIO . putStrLn) (withDbPath . MovieScores.addMovieScores)
+  getImdbId :: Movie -> ExceptT Text IAPIAndDB Types.ImdbId
+  getImdbId movie = do
+    let liftDbPath = lift . withDbPath
+    liftDbPath (ExternalIds.imdbId movie) >>= \case
+      ExternalIds.NotNull id -> return id
+      ExternalIds.Null -> throwE [qq|Cached Null IMDB ID for <$movie>!|]
+      ExternalIds.NoRow -> do
+        -- Use monad transformers they said. You'd need less conversions they said.
+        fetchedId <- lift $ lift $ runMaybeT $ API.imdbId movie
+        _ <- liftDbPath $ ExternalIds.addNullableExternalId movie Types.IMDB fetchedId
+        ExceptT $ return $ maybeToRight [qq|No IMDB ID could be fetched for <$movie>! (caching...)|] fetchedId
 
 initDatabases :: DbCall()
 initDatabases = Movies.init >> Persons.init >> Participations.init >> FilteredMovies.init >> MovieScores.init >> FollowedPersons.init >> ExternalIds.init

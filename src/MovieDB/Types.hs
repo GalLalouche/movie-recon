@@ -23,6 +23,7 @@ module MovieDB.Types(
   ExternalHost(..),
   ExternalId,
   pattern ExternalId,
+  IsExternalId,
   toExternalId,
   ImdbId,
   pattern ImdbId,

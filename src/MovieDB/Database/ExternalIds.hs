@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -11,8 +12,10 @@ module MovieDB.Database.ExternalIds(
   clear,
   addExternalId,
   addNullExternalId,
+  addNullableExternalId,
   Nullable(..),
   externalId,
+  imdbId,
 ) where
 
 import Data.Maybe                        (maybe)
@@ -25,7 +28,7 @@ import Data.Functor                      (void)
 import MovieDB.Database                  (DbCall)
 import MovieDB.Database.Internal.TypesTH ()
 import MovieDB.Database.Movies           (MovieRowId, toMovieRowId)
-import MovieDB.Types                     (ExternalHost(IMDB), ExternalId, pattern ExternalId, Movie, mkImdbId, toExternalId)
+import MovieDB.Types                     (ExternalHost(IMDB), ExternalId, pattern ExternalId, ImdbId, Movie, mkImdbId, toExternalId, IsExternalId)
 
 import Database.Persist.Sql              (Filter, deleteWhere, entityVal, getBy, insert, runMigrationSilent)
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
@@ -59,7 +62,12 @@ addNullExternalId m h = do
   let row = ExternalIdRow mrid h Nothing
   insert row
 
-data Nullable a = NoRow | Null | NotNull a deriving (Show, Eq, Ord)
+addNullableExternalId :: IsExternalId eid => Movie -> ExternalHost -> Maybe eid -> DbCall ExternalIdRowId
+addNullableExternalId movie host Nothing = addNullExternalId movie host
+addNullableExternalId movie _ (Just id) = addExternalId $ toExternalId movie id
+
+
+data Nullable a = NoRow | Null | NotNull a deriving (Show, Eq, Ord, Functor)
 
 externalId :: Movie -> ExternalHost -> DbCall (Nullable ExternalId)
 externalId m h = do
@@ -71,3 +79,6 @@ externalId m h = do
   where
     idCtor = case h of IMDB -> mkImdbId
     externalIdCtor = NotNull . toExternalId m . idCtor
+
+imdbId :: Movie -> DbCall (Nullable ImdbId)
+imdbId m = fmap (\(ExternalId _ _ id) -> mkImdbId id) <$> externalId m IMDB
