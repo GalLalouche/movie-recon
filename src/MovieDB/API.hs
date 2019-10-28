@@ -12,8 +12,10 @@ module MovieDB.API(
   imdbId,
 ) where
 
+import           Data.Foldable                 (toList)
 import qualified Data.List.NonEmpty            as NEL (fromList)
 import           Data.Text                     (Text)
+import           Data.Vector                   (Vector)
 import           Text.InterpolatedString.Perl6 (qq)
 
 import           Control.Monad.IO.Class        (liftIO)
@@ -31,9 +33,9 @@ import           Common.Operators
 
 castAndCrew :: Movie -> ApiCall CastAndCrew
 castAndCrew m = getParticipations (flip Participation m) [qq|movie/{deepId m}/credits|] I.parseMovieCredits <$$>
-    toCastAndCrew . NEL.fromList
+    toCastAndCrew . NEL.fromList . toList
 
-personCredits :: Person -> ApiCall [Participation]
+personCredits :: Person -> ApiCall (Vector Participation)
 personCredits p = getParticipations (Participation p) [qq|person/{deepId p}/movie_credits|] I.parsePersonCredits
 
 personName :: Url -> ApiCall Person
@@ -55,6 +57,6 @@ runQuery query parser = do
 getParticipations ::
     (b -> ParticipationType -> Participation)
     -> Text
-    -> ObjectParser [(b, ParticipationType)]
-    -> ApiCall [Participation]
-getParticipations toParticipations = runQuery >$$> map (uncurry toParticipations)
+    -> ObjectParser (Vector (b, ParticipationType))
+    -> ApiCall (Vector Participation)
+getParticipations toParticipations = runQuery >$$> fmap (uncurry toParticipations)

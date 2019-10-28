@@ -19,23 +19,25 @@ module MovieDB.Database.FilteredMovies(
   allFilteredMovies,
 ) where
 
-import Prelude                           hiding (id, init)
+import           Prelude                           hiding (id, init)
 
-import Data.Maybe                        (isJust)
+import           Data.Maybe                        (isJust)
+import           Data.Vector                       (Vector)
+import qualified Data.Vector                       as Vector (fromList)
 
-import Control.Monad                     ((>=>))
-import Data.Functor                      (void)
+import           Control.Monad                     ((>=>))
+import           Data.Functor                      (void)
 
-import MovieDB.Database                  (DbCall)
-import MovieDB.Database.Internal.Common  (getValueByRowId)
-import MovieDB.Database.Internal.TypesTH ()
-import MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
-import MovieDB.Types                     (FilterReason, FilteredMovie(..))
+import           MovieDB.Database                  (DbCall)
+import           MovieDB.Database.Internal.Common  (getValueByRowId)
+import           MovieDB.Database.Internal.TypesTH ()
+import           MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
+import           MovieDB.Types                     (FilterReason, FilteredMovie(..))
 
-import Common.Operators
+import           Common.Operators
 
-import Database.Persist.Sql              (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)
-import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import           Database.Persist.Sql              (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)
+import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -71,10 +73,10 @@ isFiltered = toMovieRowId >=> (fmap isJust . getBy . UniqueMovieId)
 isNotFiltered :: MovieRowable m => m -> DbCall Bool
 isNotFiltered = not <$< isFiltered
 
-allFilteredMovies :: DbCall [FilteredMovie]
+allFilteredMovies :: DbCall (Vector FilteredMovie)
 allFilteredMovies = do
   rows <- fmap entityVal <$> selectList passFilter []
   let ids = map filteredMovieRowMovieId rows
   let reasons = map filteredMovieRowReason rows
   movies <- traverse getValueByRowId ids
-  return $ zipWith FilteredMovie movies reasons
+  return $ Vector.fromList $ zipWith FilteredMovie movies reasons

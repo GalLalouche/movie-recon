@@ -12,16 +12,15 @@ module MovieDB.API.Internal(
 import           Control.Monad             (mfilter)
 import           Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
-import           Data.Foldable             (toList)
-import           Data.Maybe                (mapMaybe)
 import           Data.Semigroup            ((<>))
 import           Data.Text                 (Text, pack, splitOn, unpack)
 import qualified Data.Text                 as Text (null)
 import           Data.Time                 (Day)
+import           Data.Vector               (Vector)
 
 import           Common.JsonUtils          (ObjectParser, int, str, strMaybe, withObjects)
 import           Common.Maybes             (mapIfOrNothing)
-import           Common.MonadPluses        (catMaybes)
+import           Common.MonadPluses        (catMaybes, fmapMaybes)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
@@ -35,11 +34,11 @@ getId ctr = int "id" <$$> (show .> pack .> ctr)
 notNull :: Text -> Bool
 notNull = not . Text.null
 
-parseCastAndCrew :: ObjectParser a -> ObjectParser [(a, ParticipationType)]
+parseCastAndCrew :: ObjectParser a -> ObjectParser (Vector (a, ParticipationType))
 parseCastAndCrew parser = do
     parsedCast <- withObjects "cast" parseCast
     parsedCrew <- withObjects "crew" parseCrew <$$> catMaybes
-    return . toList $ parsedCast <> parsedCrew where
+    return $ parsedCast <> parsedCrew where
       withRole role = (, role) <$> parser
       parseCast = withRole Actor
       -- Returns Nothing on unsupported role, e.g., Producer, or if the there is no "job" field, e.g., for future movies.
@@ -48,14 +47,14 @@ parseCastAndCrew parser = do
         toRole "Screenplay" = Just Writer
         toRole _            = Nothing
 
-parseMovieCredits :: ObjectParser [(Person, ParticipationType)]
+parseMovieCredits :: ObjectParser (Vector (Person, ParticipationType))
 parseMovieCredits = parseCastAndCrew parsePerson where
   parsePerson = Person <$> getId mkPersonId <*> str "name"
 
 -- release_date is optional for unreleased movies
 data MaybeMovie = MaybeMovie MovieId Text (Maybe Day)
-parsePersonCredits :: ObjectParser [(Movie, ParticipationType)]
-parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
+parsePersonCredits :: ObjectParser (Vector (Movie, ParticipationType))
+parsePersonCredits = fmapMaybes liftMaybe <$> parseCastAndCrew parseMovie where
   parseMovie = MaybeMovie <$> getId mkMovieId <*> str "title" <*> getDay
   getDay :: ObjectParser (Maybe Day)
   getDay = str "release_date" <$$> mapIfOrNothing notNull (read . unpack)

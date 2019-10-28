@@ -19,24 +19,27 @@ module MovieDB.Database.Participations(
   castAndCrew,
 ) where
 
-import Prelude                           hiding (init)
+import           Prelude                           hiding (elem, init)
 
-import Control.Monad.Trans.Maybe         (MaybeT(..), runMaybeT)
-import Data.Functor                      (void)
+import           Data.Vector                       (Vector, elem)
+import qualified Data.Vector                       as Vector (fromList)
 
-import MovieDB.Database                  (DbCall, DbMaybe)
-import MovieDB.Database.Internal.Common  (getValueByRowId, insertOrVerify)
-import MovieDB.Database.Internal.TypesTH ()
-import MovieDB.Database.Movies           (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import MovieDB.Database.Persons          (PersonRowId, PersonRowable, toPersonRowId)
-import MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
+import           Control.Monad.Trans.Maybe         (MaybeT(..), runMaybeT)
+import           Data.Functor                      (void)
 
-import Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
-import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import           MovieDB.Database                  (DbCall, DbMaybe)
+import           MovieDB.Database.Internal.Common  (getValueByRowId, insertOrVerify)
+import           MovieDB.Database.Internal.TypesTH ()
+import           MovieDB.Database.Movies           (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import           MovieDB.Database.Persons          (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
-import Common.Foldables                  (mapHeadOrElse)
-import Common.MaybeTs                    (fromList)
-import Common.Operators
+import           Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
+import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
+import           Common.Foldables                  (mapHeadOrElse)
+import qualified Common.MaybeTs                    as MaybeTs (fromFoldable)
+import           Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -74,23 +77,22 @@ toParticipation (ParticipationRow pid mid pt) =
 
 participationsAux column rowIdExtractor value = do
   rowId <- rowIdExtractor value
-  result <- map entityVal <$> selectList [column ==. rowId] []
+  result <- Vector.fromList . map entityVal <$> selectList [column ==. rowId] []
   traverse toParticipation result
 
-getParticipationsForMovie :: MovieRowable m => m -> DbCall [Participation]
+getParticipationsForMovie :: MovieRowable m => m -> DbCall (Vector Participation)
 getParticipationsForMovie = participationsAux ParticipationRowMovieId toMovieRowId
 
-getParticipationsForPerson :: PersonRowable p => p -> DbCall [Participation]
+getParticipationsForPerson :: PersonRowable p => p -> DbCall (Vector Participation)
 getParticipationsForPerson = participationsAux ParticipationRowPersonId toPersonRowId
 
 -- "Nothing" is returned if there are no participation entries for the movie.
 castAndCrew :: MaybeMovieRowable m => m -> DbMaybe CastAndCrew
 castAndCrew m = do
   mid <- toMaybeMovieRowId m
-  toCastAndCrew <$> fromList (getParticipationsForMovie mid)
+  toCastAndCrew <$> MaybeTs.fromFoldable (getParticipationsForMovie mid)
 
 data EntryResult = Participated | DidNotParticipate | Unknown -- When the movie has no participations at all
 hasParticipated :: Person -> Movie -> DbCall EntryResult
-hasParticipated p movie = fromList . map person <$> getParticipationsForMovie movie where
-  fromList []   = Unknown
-  fromList crew = if p `elem` crew then Participated else DidNotParticipate
+hasParticipated p movie = aux . fmap person <$> getParticipationsForMovie movie where
+  aux crew | null crew = Unknown | p `elem` crew = Participated | otherwise = DidNotParticipate

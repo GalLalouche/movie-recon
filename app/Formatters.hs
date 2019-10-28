@@ -12,6 +12,7 @@ import           Prelude                       hiding (unlines)
 
 import           Data.Foldable                 (toList)
 import           Data.Text                     (Text, unlines)
+import           Data.Vector                   (Vector)
 import           Text.InterpolatedString.Perl6 (qq)
 
 import           MovieDB.Types                 (Movie(..), pattern MovieId, Participation(..), ParticipationType(Actor), Person)
@@ -36,12 +37,12 @@ mkStringMovie (Movie (MovieId id) name date) ms = let
       in [qq|$score $shortSource|]
   in [qq|$id$tab$name$tab$date$tab$scoreString|]
 
-data FullMovieInfo = FullMovieInfo Movie [Participation] (Maybe MovieScores)
+data FullMovieInfo = FullMovieInfo Movie (Vector Participation) (Maybe MovieScores)
 mkFullMovieInfoString :: FullMovieInfo -> Text
 mkFullMovieInfoString (FullMovieInfo m ps ms) = let
     movieString = mkStringMovie m ms
-    participationStrings = map mkStringParticipation ps
-  in unlines $ movieString : participationStrings where
+    participationStrings = fmap mkStringParticipation ps
+  in unlines $ movieString : toList participationStrings where
   mkStringParticipation (Participation p _ pt) = let
       maybeRole = case pt of
         Actor -> ""

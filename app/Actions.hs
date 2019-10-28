@@ -14,11 +14,11 @@ module Actions(
 
 import           Prelude                          hiding (lines, putStrLn, unlines)
 
-import           Data.Foldable                    (toList, traverse_)
-import           Data.List                        (sortOn)
+import           Data.Foldable                    (fold, toList, traverse_)
 import qualified Data.Ord
 import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
 import           Data.Text.IO                     (putStrLn)
+import           Data.Vector                      (Vector)
 import           Text.InterpolatedString.Perl6    (qq)
 
 import           Control.Applicative              (liftA2)
@@ -49,6 +49,7 @@ import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
 import           Common.Operators
 import           Common.Traversables              (traverseFproduct)
+import           Common.Vectors                   (sortOn)
 
 import qualified Formatters                       as F
 
@@ -56,13 +57,13 @@ import qualified Formatters                       as F
 type APIAndDB = ReaderT DbPath IO ()
 liftApi = liftIO
 
-getUnseenMovies :: DbCall [Movie]
+getUnseenMovies :: DbCall (Vector Movie)
 getUnseenMovies = Movies.allMovies >>= traverseFilter FilteredMovies.isNotFiltered
 
 updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = withDbPath $ do
   followedPersons <- FollowedPersons.allFollowedPersons
-  participations <- liftApi $ concat <$> traverse API.personCredits followedPersons
+  participations <- liftApi $ fold <$> traverse API.personCredits followedPersons
   traverse_ Participations.addValueEntry participations
 
 addFollowedPerson :: Text -> APIAndDB
@@ -91,12 +92,12 @@ printUnseenMovies :: Bool -> DbCall ()
 printUnseenMovies verbose = do
   movies <- getUnseenMovies
   extraInfo <- traverseFproduct getExtraInfo movies
-  let formattedMovies = map (`F.mkStringMovie` Nothing) movies
-  let formattedParticipations = map (F.mkFullMovieInfoString . toFullMovieInfo) $ sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
-  liftIO $ putStrLn $ unlines $ if verbose then formattedParticipations else formattedMovies where
-    getFollowedParticipations :: Movie -> DbCall [Participation]
+  let formattedMovies = fmap (`F.mkStringMovie` Nothing) movies
+  let formattedParticipations = F.mkFullMovieInfoString . toFullMovieInfo <$> sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
+  liftIO $ putStrLn $ unlines $ toList $ if verbose then formattedParticipations else formattedMovies where
+    getFollowedParticipations :: Movie -> DbCall (Vector Participation)
     getFollowedParticipations = Participations.getParticipationsForMovie >=> traverseFilter (FollowedPersons.isFollowed . Types.person)
-    getExtraInfo :: Movie -> DbCall ([Participation], Maybe MovieScores)
+    getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
     getExtraInfo = let
         getScores = runMaybeT . MovieScores.movieScores
       in uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)

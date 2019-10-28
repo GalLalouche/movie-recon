@@ -36,7 +36,7 @@ testMovieScores = testGroup "movieScores" [
 testAllMovieScores = testGroup "allMovieScores" [
       testCase "No movies returns an empty list" $ do
         res <- withTempDb $ DB.init >> DB.allMovieScores
-        res @?= []
+        res *?= []
     , testCase "returns movies" $ do
         res <- withTempDb $ DB.init >> DB.addMovieScores movieScores >> DB.addMovieScores movieScores2 >> DB.allMovieScores
         res *?= [movieScores2, movieScores]

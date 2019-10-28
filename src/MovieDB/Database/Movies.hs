@@ -21,26 +21,28 @@ module MovieDB.Database.Movies(
   toMaybeMovieRowId,
 ) where
 
-import Prelude                          hiding (id, init)
+import           Prelude                          hiding (id, init)
 
-import Data.Maybe                       (fromJust)
-import Data.Text                        (Text)
-import Data.Time                        (Day)
+import           Data.Maybe                       (fromJust)
+import           Data.Text                        (Text)
+import           Data.Time                        (Day)
+import           Data.Vector                      (Vector)
+import qualified Data.Vector                      as Vector (fromList)
 
-import Control.Arrow                    ((&&&))
-import Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
-import Control.Monad.Trans.Class        (lift)
-import Control.Monad.Trans.Maybe        (MaybeT(..))
-import Data.Functor                     (void)
+import           Control.Arrow                    ((&&&))
+import           Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
+import           Control.Monad.Trans.Class        (lift)
+import           Control.Monad.Trans.Maybe        (MaybeT(..))
+import           Data.Functor                     (void)
 
-import MovieDB.Database                 (DbCall, DbMaybe)
-import MovieDB.Database.Internal.Common (ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
-import MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
+import           MovieDB.Database                 (DbCall, DbMaybe)
+import           MovieDB.Database.Internal.Common (ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValue, getValueByRowId, insertOrVerify)
+import           MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
 
-import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, runMigrationSilent, selectList)
-import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import           Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, runMigrationSilent, selectList)
+import           Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
-import Common.Operators
+import           Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -73,8 +75,8 @@ clear = deleteWhere passFilter
 invertIso :: MovieRow -> Movie
 invertIso = view $ from rowIso
 
-allMovies :: DbCall [Movie]
-allMovies = fmap (invertIso . entityVal) <$> selectList passFilter []
+allMovies :: DbCall (Vector Movie)
+allMovies = Vector.fromList . fmap (invertIso . entityVal) <$> selectList passFilter []
 
 instance ExtractableId Movie MovieId where
   extractId = view id

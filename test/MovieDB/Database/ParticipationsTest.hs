@@ -2,6 +2,9 @@
 
 module MovieDB.Database.ParticipationsTest where
 
+import           Data.Vector                     (Vector)
+import qualified Data.Vector                     as Vector (fromList)
+
 import           MovieDB.Database.Movies         ()
 import qualified MovieDB.Database.Participations as DB
 import           MovieDB.Types                   (CastAndCrew(..), Participation(..), ParticipationType(Actor, Director, Writer))
@@ -30,8 +33,8 @@ test_participations = [
         DB.addValueEntry $ Participation actor2 movie2 Actor
         DB.addValueEntry $ Participation actor3 movie1 Actor
         fromJust $ DB.castAndCrew movie1
-      directors res @?= [director]
-      writers res @?= []
+      directors res *?= [director]
+      writers res *?= []
       actors res *?= [actor1, actor3]
       return ()
   ]

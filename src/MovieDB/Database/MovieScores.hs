@@ -20,6 +20,8 @@ import           Prelude                           hiding (init)
 import           Data.Foldable                     (toList, traverse_)
 import qualified Data.Map                          as Map (assocs)
 import qualified Data.Set                          as Set (fromList)
+import           Data.Vector                       (Vector)
+import qualified Data.Vector                       as Vector (fromList)
 
 import           Control.Arrow                     ((&&&))
 import           Control.Monad.Trans.Maybe         (MaybeT(..))
@@ -79,9 +81,9 @@ movieScores m = MaybeT $ do
 hasMovieScores :: MovieRowable m => m -> DbCall Bool
 hasMovieScores = isJust . movieScores
 
-allMovieScores :: DbCall [MovieScores]
+allMovieScores :: DbCall (Vector MovieScores)
 allMovieScores = do
   result <- fmap (pure . entityVal) <$> selectList passFilter []
   scores <- traverse toMovieScores result
   let movieScoresPairs = Map.assocs $ Maps.semigroupMapBy _movie _scores scores
-  return $ map (uncurry MovieScores) movieScoresPairs
+  return $ Vector.fromList $ map (uncurry MovieScores) movieScoresPairs

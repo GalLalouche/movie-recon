@@ -14,20 +14,22 @@ module MovieDB.Database.FollowedPersons(
   allFollowedPersons
 ) where
 
-import Prelude                          hiding (init)
+import           Prelude                          hiding (init)
 
-import Data.Maybe                       (isJust)
+import           Data.Maybe                       (isJust)
+import           Data.Vector                      (Vector)
+import qualified Data.Vector                      as Vector (fromList)
 
-import Control.Monad                    ((>=>))
-import Data.Functor                     (void)
+import           Control.Monad                    ((>=>))
+import           Data.Functor                     (void)
 
-import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (getValueByRowId)
-import MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
-import MovieDB.Types                    (Person)
+import           MovieDB.Database                 (DbCall)
+import           MovieDB.Database.Internal.Common (getValueByRowId)
+import           MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Types                    (Person)
 
-import Database.Persist.Sql             (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)
-import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+import           Database.Persist.Sql             (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)
+import           Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -53,7 +55,7 @@ removeFollowedPerson = toPersonRowId >=> (deleteBy . UniquePersonId)
 isFollowed :: PersonRowable m => m -> DbCall Bool
 isFollowed = toPersonRowId >=> (fmap isJust . getBy . UniquePersonId)
 
-allFollowedPersons :: DbCall [Person]
+allFollowedPersons :: DbCall (Vector Person)
 allFollowedPersons = do
-  ids <- fmap (followedPersonPersonId . entityVal) <$> selectList passFilter []
+  ids <- Vector.fromList . fmap (followedPersonPersonId . entityVal) <$> selectList passFilter []
   traverse getValueByRowId ids

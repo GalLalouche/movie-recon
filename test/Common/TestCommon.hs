@@ -2,9 +2,10 @@
 
 module Common.TestCommon where
 
-import Control.Exception (SomeException(..), catch)
+import Data.Foldable     (toList)
+import Data.List         (sort)
 
-import Common.Maps       (counts)
+import Control.Exception (SomeException(..), catch)
 
 import Test.Tasty.HUnit  ((@?), (@?=))
 
@@ -24,5 +25,4 @@ assertThrows a = checkThrows a @? "Expected an some exception to be thrown but n
 
 -- Order-agnostic equality check
 (*?=) :: (Foldable f1, Foldable f2, Ord a, Show a) => f1 a -> f2 a -> IO ()
-a *?= b = counts a @?= counts b
-
+a *?= b = sort (toList a) @?= sort (toList b)

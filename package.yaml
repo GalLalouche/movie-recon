@@ -28,6 +28,7 @@ dependencies:
 - utf8-string
 - aeson
 - vector
+- vector-algorithms
 - directory
 - persistent
 - persistent-template

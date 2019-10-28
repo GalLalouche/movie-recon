@@ -28,16 +28,18 @@ module MovieDB.Types(
   mkImdbId,
 ) where
 
-import           Data.List.NonEmpty      (NonEmpty((:|)))
-import           Data.Maybe              (isJust)
-import           Data.Text               (Text, unpack)
-import qualified Data.Text               as Text
-import           Data.Time               (Day)
+import           Data.List.NonEmpty            (NonEmpty((:|)))
+import           Data.Maybe                    (isJust)
+import           Data.Text                     (Text, unpack)
+import qualified Data.Text                     as Text
+import           Data.Time                     (Day)
+import           Data.Vector                   (Vector)
+import qualified Data.Vector                   as Vector
 import           Text.InterpolatedString.Perl6 (qq)
-import           Text.Regex              (matchRegex, mkRegex)
+import           Text.Regex                    (matchRegex, mkRegex)
 
-import           Common.Assertions       (assertMsg)
-import           Common.Maps             (monoidLookup, multiMapBy)
+import           Common.Assertions             (assertMsg)
+import           Common.Maps                   (monoidLookup, multiMapBy)
 
 
 newtype PersonId = RealPersonId
@@ -93,15 +95,15 @@ instance HasDeepId Person where
 
 data CastAndCrew = CastAndCrew
   { movie     :: Movie
-  , directors :: [Person]
-  , writers   :: [Person]
-  , actors    :: [Person]
+  , directors :: Vector Person
+  , writers   :: Vector Person
+  , actors    :: Vector Person
   } deriving (Show, Eq, Ord)
 toCastAndCrew :: NonEmpty Participation -> CastAndCrew
 toCastAndCrew ps@(p :| _) = let
     map = multiMapBy participationType ps
     m = movie (p :: Participation)
-    getAll pt = person <$> monoidLookup pt map
+    getAll pt = Vector.fromList $ person <$> monoidLookup pt map
     directors = getAll Director
     writers = getAll Writer
     actors = getAll Actor

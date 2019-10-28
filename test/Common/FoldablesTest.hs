@@ -10,6 +10,7 @@ test_all = testGroup "Foldables" [
     testGroup "nth" [
       testCase "exists" $ F.nth 1 [1, 2, 3] @?= Just 2
     , testCase "does not exist" $ F.nth 4 [1, 2, 3] @?= Nothing
+    , testCase "infinite" $ F.nth 4 [1..] @?= Just 5
     ]
   , let
       action = F.mapHeadOrElse (+ 1) 0
