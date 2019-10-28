@@ -5,12 +5,14 @@
 
 module Common.Operators where
 
+import           Data.Function((&))
+
 import           Control.Monad ((>=>))
 
 
 (|>) :: a -> (a -> b) -> b
-x |> f = f x
-infixl 4 |>
+(|>) = (&)
+infixl 1 |>
 
 (|>>) :: a -> (b -> a -> c) -> b -> c
 -- (|>>) = flip flip, but nah...
