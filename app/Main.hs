@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import           MovieDB.Database           (DbCall, DbPath(..), runDbCall)
-
 import           Control.Monad.Trans.Reader (runReaderT)
+
+import           MovieDB.Database           (DbCall, DbPath(..), runDbCall)
 
 import qualified Actions
 import qualified Config
@@ -19,7 +19,7 @@ withBoth = flip runReaderT dbPath
 main = do
   args <- Config.parseConfig
   case args of
-    Config.Init                -> withDb $ Actions.initDatabases
+    Config.Init                -> withDb Actions.initDatabases
     (Config.GetUnseen verbose) -> withDb $ Actions.printUnseenMovies verbose
     Config.UpdateSeen          -> withDb Actions.parseSeenMovies
     Config.UpdateIndex         -> withBoth Actions.updateMoviesForAllFollowedPersons

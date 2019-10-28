@@ -26,7 +26,7 @@ import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
 import           APIs                      (Url(..))
-import           MovieDB.Types             (ImdbId, Movie(..), MovieId(..), ParticipationType(..), Person(..), PersonId(..), mkImdbId, mkMovieId, mkPersonId)
+import           MovieDB.Types             (ImdbId, Movie(..), MovieId, ParticipationType(..), Person(..), PersonId, mkImdbId, mkMovieId, mkPersonId)
 
 
 getId :: (Text -> a) -> ObjectParser a
@@ -63,7 +63,7 @@ parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
   liftMaybe (MaybeMovie id name d, pt) = fmap (\d -> (Movie id name d, pt)) d
 
 parseId :: Url -> PersonId
-parseId (Url url) = mkPersonId $ head $ splitOn "-" $ splitOn "/person/" (pack url) !! 1
+parseId (Url url) = mkPersonId $ head $ splitOn "-" $ splitOn "/person/" url !! 1
 
 parsePersonName :: ObjectParser Text
 parsePersonName = str "name"

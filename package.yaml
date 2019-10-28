@@ -24,7 +24,6 @@ dependencies:
 - mtl
 - transformers
 - HTTP
-- interpolate
 - bytestring
 - utf8-string
 - aeson
@@ -43,6 +42,8 @@ dependencies:
 - either
 - monad-logger
 - resourcet
+- interpolatedstring-perl6
+
 
 library:
   source-dirs: src

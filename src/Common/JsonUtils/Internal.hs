@@ -20,18 +20,18 @@ module Common.JsonUtils.Internal(
   fromSuccess,
 ) where
 
-import           Data.Aeson                (Array, Object, Result(Error, Success), Value, decode, withArray, withObject)
-import           Data.Aeson.Types          (FromJSON, Parser, parseFieldMaybe)
-import           Data.Vector               (Vector)
+import           Data.Aeson                    (Array, Object, Result(Error, Success), Value, decode, withArray, withObject)
+import           Data.Aeson.Types              (FromJSON, Parser, parseFieldMaybe)
+import           Data.Vector                   (Vector)
 
-import           Data.ByteString.Lazy.UTF8 (ByteString, fromString)
-import           Data.String.Interpolate   (i)
-import           Data.Text                 (Text, unpack)
-import           Data.Text.Lazy            (fromStrict)
-import           Data.Text.Lazy.Encoding   (encodeUtf8)
-import           Text.Read                 (readMaybe)
+import           Data.ByteString.Lazy.UTF8     (ByteString, fromString)
+import           Data.Text                     (Text, unpack)
+import           Data.Text.Lazy                (fromStrict)
+import           Data.Text.Lazy.Encoding       (encodeUtf8)
+import           Text.InterpolatedString.Perl6 (qq)
+import           Text.Read                     (readMaybe)
 
-import qualified Common.Maybes             as Maybes
+import qualified Common.Maybes                 as Maybes
 import           Common.Operators
 
 
@@ -49,14 +49,14 @@ instance ByteStringable Text where
   toByteString = encodeUtf8 . fromStrict
 
 decodeUnsafe :: ByteStringable a => a -> Value
-decodeUnsafe a = Maybes.orError [i|Could not decode <#{toByteString a}>|] (toByteString a |> decode)
+decodeUnsafe a = Maybes.orError [qq|Could not decode <{toByteString a}>|] (toByteString a |> decode)
 
 asObject :: Value -> Parser Object
 asObject = withObject "object" return
 
 orError :: Text -> (Text -> Object -> Parser (Maybe a)) -> Text -> Object -> Parser a
 orError action f = \t o -> f t o <$$> Maybes.orError (msg t o) where
-  msg field o = [i|Could not apply <#{action}> on text <#{field}> in object <#{o}>|]
+  msg field o = [qq|Could not apply <$action> on text <$field> in object <$o>|]
 
 getMaybe :: FromJSON a => Text -> Object -> Parser (Maybe a)
 getMaybe = flip parseFieldMaybe

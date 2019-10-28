@@ -30,10 +30,10 @@ module MovieDB.Types(
 
 import           Data.List.NonEmpty      (NonEmpty((:|)))
 import           Data.Maybe              (isJust)
-import           Data.String.Interpolate (i)
 import           Data.Text               (Text, unpack)
 import qualified Data.Text               as Text
 import           Data.Time               (Day)
+import           Text.InterpolatedString.Perl6 (qq)
 import           Text.Regex              (matchRegex, mkRegex)
 
 import           Common.Assertions       (assertMsg)
@@ -67,7 +67,7 @@ mkMovieId :: Text -> MovieId
 mkMovieId = checkDigitOnlyId "Movie" RealMovieId
 
 checkValidId :: (Text -> Bool) -> Text -> (Text -> a) -> Text -> a
-checkValidId check name ctor s = assertMsg (check s) [i|<#{s}> is not a valid #{name} ID|] (ctor s)
+checkValidId check name ctor s = assertMsg (check s) [qq|<$s> is not a valid $name ID|] (ctor s)
 
 checkDigitOnlyId = checkValidId isValidId where
   isValidId = isJust . matchRegex digitsOnly . unpack
@@ -119,8 +119,8 @@ data Participation = Participation
 data ExternalHost = IMDB deriving (Eq, Ord, Show, Read)
 data ExternalId = RealExternalId
   { _movie :: Movie
-  , _host :: ExternalHost
-  , _id :: Text
+  , _host  :: ExternalHost
+  , _id    :: Text
   } deriving (Show, Eq, Ord)
 pattern ExternalId :: Movie -> ExternalHost -> Text -> ExternalId
 pattern ExternalId m h id <- RealExternalId m h id

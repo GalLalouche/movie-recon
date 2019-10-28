@@ -3,11 +3,12 @@
 
 module OMDB.Internal where
 
-import Common.JsonUtils        (ObjectParser, str, withObjects)
-import Data.Char               (isDigit)
-import Data.String.Interpolate
-import Data.Text               (Text, index, unpack)
-import Data.Vector             (Vector)
+import Data.Char                     (isDigit)
+import Data.Text                     (Text, index, unpack)
+import Data.Vector                   (Vector)
+import Text.InterpolatedString.Perl6 (qq)
+
+import Common.JsonUtils              (ObjectParser, str, withObjects)
 
 
 data Source = IMDB | RottenTomatoes | Metacritic deriving (Eq, Show, Ord, Read) -- Extending Ord for saving in Sets
@@ -16,7 +17,7 @@ readSource t
   | t == "Internet Movie Database" = IMDB
   | t == "Rotten Tomatoes" = RottenTomatoes
   | t == "Metacritic" = Metacritic
-  | otherwise = error [i|Unrecongnized source <#{t}>|]
+  | otherwise = error [qq|Unrecongnized source <$t>|]
 
 data MovieScore = MovieScore
   { _source :: Source

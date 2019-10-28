@@ -1,12 +1,14 @@
 module Common.Maybes where
 
-import Common.Operators
-import Data.Maybe       (fromMaybe, maybe)
+import Data.Maybe        (fromMaybe, maybe)
+import Data.Text         (Text)
+
+import Common.Assertions (textError)
 
 
-orError :: String -> Maybe a -> a
+orError :: Text -> Maybe a -> a
 orError _ (Just x)  = x
-orError msg Nothing = error msg
+orError msg Nothing = textError msg
 
 check :: (a -> Bool) -> a -> Maybe a
 check p a = if p a then Just a else Nothing

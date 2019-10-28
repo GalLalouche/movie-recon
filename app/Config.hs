@@ -4,8 +4,12 @@
 
 module Config(Config(..), parseConfig) where
 
-import System.Console.CmdArgs (Data, Typeable, argPos, cmdArgs, def, help, modes, typ, (&=))
+import Data.Text              (Text)
 
+import System.Console.CmdArgs (Data, Default(..), Typeable, argPos, cmdArgs, def, help, modes, typ, (&=))
+
+
+instance Default Text where def = ""
 
 data Config =
       Init
@@ -13,7 +17,7 @@ data Config =
     | GetUnseen {verbose :: Bool}
     | UpdateIndex
     | UpdateScores
-    | AddPerson {url :: String}
+    | AddPerson {url :: Text}
     deriving (Show, Data, Typeable, Eq)
 
 initDatabases = Init &= help "Initializes all databases"

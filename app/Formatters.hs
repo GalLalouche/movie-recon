@@ -2,33 +2,42 @@
 {-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-module Formatters where
+module Formatters(
+  mkStringMovie,
+  FullMovieInfo(..),
+  mkFullMovieInfoString,
+) where
 
-import           Data.Foldable           (toList)
-import           Data.String.Interpolate (i)
+import           Prelude                       hiding (unlines)
 
-import           MovieDB.Types           (Movie(..), pattern MovieId, Participation(..), ParticipationType(Actor), Person)
-import qualified MovieDB.Types           as Types
-import           OMDB                    (MovieScore(..), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
+import           Data.Foldable                 (toList)
+import           Data.Text                     (Text, unlines)
+import           Text.InterpolatedString.Perl6 (qq)
+
+import           MovieDB.Types                 (Movie(..), pattern MovieId, Participation(..), ParticipationType(Actor), Person)
+import qualified MovieDB.Types                 as Types
+import           OMDB                          (MovieScore(..), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
 import qualified OMDB
 
-import           Common.Foldables        (intercalate)
+import           Common.Foldables              (intercalate)
 
 
-mkStringMovie :: Movie -> Maybe MovieScores -> String
+tab = "\t"
+
+mkStringMovie :: Movie -> Maybe MovieScores -> Text
 mkStringMovie (Movie (MovieId id) name date) ms = let
     scoreString = maybe "No score" (toString . toList . OMDB._scores) ms
-    toString ms = [i|(#{intercalate ", " $ fmap aux ms})|]
+    toString ms = [qq|({intercalate ", " $ fmap aux ms})|]
     aux (MovieScore source score) = let
         shortSource = case source of
           IMDB           -> "IMDB"
           RottenTomatoes -> "RT"
           Metacritic     -> "MC"
-      in [i|#{score} #{shortSource}|]
-  in [i|#{id}\t#{name}\t#{date}\t#{scoreString}|]
+      in [qq|$score $shortSource|]
+  in [qq|$id$tab$name$tab$date$tab$scoreString|]
 
 data FullMovieInfo = FullMovieInfo Movie [Participation] (Maybe MovieScores)
-mkFullMovieInfoString :: FullMovieInfo -> String
+mkFullMovieInfoString :: FullMovieInfo -> Text
 mkFullMovieInfoString (FullMovieInfo m ps ms) = let
     movieString = mkStringMovie m ms
     participationStrings = map mkStringParticipation ps
@@ -36,6 +45,6 @@ mkFullMovieInfoString (FullMovieInfo m ps ms) = let
   mkStringParticipation (Participation p _ pt) = let
       maybeRole = case pt of
         Actor -> ""
-        e     -> [i| (#{e})|]
+        e     -> [qq| ($e)|]
       name = Types._name (p :: Person)
-    in [i|\t#{name}#{maybeRole}|]
+    in [qq|$tab$name$maybeRole|]

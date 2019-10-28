@@ -1,19 +1,16 @@
-{-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE LiberalTypeSynonyms    #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE QuasiQuotes            #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
 
 module MovieDB.Database.Internal.Common where
 
-import Data.String.Interpolate   (i)
+import Text.InterpolatedString.Perl6 (qq)
 
-import Control.Monad.IO.Class    (liftIO)
-import Control.Monad.Trans.Maybe (MaybeT, runMaybeT)
-import Data.Functor              (($>))
+import Control.Monad.IO.Class        (liftIO)
+import Control.Monad.Trans.Maybe     (runMaybeT)
+import Data.Functor                  (($>))
 
-import MovieDB.Database          (DbCall, DbMaybe)
+import MovieDB.Database              (DbCall, DbMaybe)
 
 
 class ExtractableId a typeId | a -> typeId where
@@ -25,7 +22,6 @@ class ExtractableId a typeId => ReadOnlyDatabase a typeId rowId | typeId -> rowI
   getValueByRowId :: rowId -> DbCall a
 
 class ReadOnlyDatabase a typeId rowId => ReadWriteDatabase a typeId rowId | typeId a -> rowId where
-  -- TODO should be internal
   forceInsert :: a -> DbCall rowId
 
 getValue :: (ReadOnlyDatabase a typeId rowId) => typeId -> DbMaybe a
@@ -47,4 +43,4 @@ insertOrVerify a = do
     assertSameOrThrow :: (Eq a, Show a) => a -> a -> IO ()
     assertSameOrThrow existingValue newValue =
       if existingValue == newValue then return ()
-      else error [i|Existing value <#{existingValue}> was different from new value <#{newValue}>|]
+      else error [qq|Existing value <$existingValue> was different from new value <$newValue>|]

@@ -10,27 +10,27 @@ module OMDB(
   getMovieScores,
 ) where
 
-import           Data.Map.Strict           (Map)
-import           Data.Set                  (Set)
-import           Data.String.Interpolate   (i)
+import           Data.Map.Strict               (Map)
+import           Data.Set                      (Set)
+import           Text.InterpolatedString.Perl6 (qq)
 
-import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Control.Monad.Trans.Maybe     (MaybeT(..))
 
-import           APIs                      (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
-import           MovieDB.Types             (ImdbId, pattern ImdbId, Movie)
+import           APIs                          (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
+import           MovieDB.Types                 (ImdbId, pattern ImdbId, Movie)
 
-import           OMDB.Internal             (MovieScore(MovieScore, _score, _source), Source(..), parse)
+import           OMDB.Internal                 (MovieScore(MovieScore, _score, _source), Source(..), parse)
 
-import           Common.Foldables          (notNull)
-import qualified Common.Maps               as Maps
-import           Common.Maybes             (check)
-import qualified Common.Sets               as Sets
+import           Common.Foldables              (notNull)
+import qualified Common.Maps                   as Maps
+import           Common.Maybes                 (check)
+import qualified Common.Sets                   as Sets
 
 
 getScore :: ImdbId -> ApiMaybe (Set MovieScore)
 getScore (ImdbId imdbId) = fmap Sets.from $ MaybeT $ do
   key <- readKey "omdb"
-  let query = Url [i|http://www.omdbapi.com/?i=#{imdbId}&apikey=#{key}|]
+  let query = Url [qq|http://www.omdbapi.com/?i=$imdbId&apikey=$key|]
   check notNull <$> parseRemoteJson query parse
 
 data MovieScores = MovieScores

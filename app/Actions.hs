@@ -12,11 +12,14 @@ module Actions(
   initDatabases,
 ) where
 
+import           Prelude                          hiding (lines, putStrLn, unlines)
+
 import           Data.Foldable                    (toList, traverse_)
 import           Data.List                        (sortOn)
 import qualified Data.Ord
-import           Data.String.Interpolate          (i)
-import           Data.Text                        (pack, splitOn, unpack)
+import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
+import           Data.Text.IO                     (putStrLn)
+import           Text.InterpolatedString.Perl6    (qq)
 
 import           Control.Applicative              (liftA2)
 import           Control.Arrow                    ((&&&))
@@ -62,27 +65,27 @@ updateMoviesForAllFollowedPersons = withDbPath $ do
   participations <- liftApi $ concat <$> traverse API.personCredits followedPersons
   traverse_ Participations.addValueEntry participations
 
-addFollowedPerson :: String -> APIAndDB
+addFollowedPerson :: Text -> APIAndDB
 addFollowedPerson url = withDbPath $ do
   person <- liftApi $ API.personName $ Url url
-  _ <- liftIO $ putStrLn [i|Adding <#{person}> and their credits...|]
+  _ <- liftIO $ putStrLn [qq|Adding <$person> and their credits...|]
   _ <- FollowedPersons.addFollowedPerson person
   participations <- liftApi $ API.personCredits person
   traverse_ Participations.addValueEntry participations
 
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do
-  ls <- lines <$> liftIO getContents
+  ls <- lines . pack <$> liftIO getContents
   movies <- traverse parse ls
   traverse_ FilteredMovies.addFilteredMovie movies
   where
-    parse :: String -> DbCall FilteredMovie
+    parse :: Text -> DbCall FilteredMovie
     parse line = do
-      let r : id = unpack $ head $ splitOn "\t" $ pack line
-      let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [i|Unsupported prefix <#{r}>|]
+      let r : id = unpack $ head $ splitOn "\t" line
+      let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [qq|Unsupported prefix <$r>|]
       movie <- getValueOrError $ mkMovieId $ pack id
       return $ FilteredMovie movie reason
-    getValueOrError mid = orError [i|Could not find movie with ID <#{mid}>|] <$> runMaybeT (Movies.getValue mid)
+    getValueOrError mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movies.getValue mid)
 
 printUnseenMovies :: Bool -> DbCall ()
 printUnseenMovies verbose = do
@@ -90,7 +93,7 @@ printUnseenMovies verbose = do
   extraInfo <- traverseFproduct getExtraInfo movies
   let formattedMovies = map (`F.mkStringMovie` Nothing) movies
   let formattedParticipations = map (F.mkFullMovieInfoString . toFullMovieInfo) $ sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
-  liftIO $ putStr $ unlines $ if verbose then formattedParticipations else formattedMovies where
+  liftIO $ putStrLn $ unlines $ if verbose then formattedParticipations else formattedMovies where
     getFollowedParticipations :: Movie -> DbCall [Participation]
     getFollowedParticipations = Participations.getParticipationsForMovie >=> traverseFilter (FollowedPersons.isFollowed . Types.person)
     getExtraInfo :: Movie -> DbCall ([Participation], Maybe MovieScores)
@@ -108,11 +111,11 @@ updateScores = withDbPath $ traverse_ updateScore =<< Movies.allMovies where
   updateScore movie = do
     hasScore <- MovieScores.hasMovieScores movie
     unless hasScore (handle $ mapExceptT liftIO $ fetchScores movie)
-  fetchScores :: Movie -> ExceptT String IO MovieScores
+  fetchScores :: Movie -> ExceptT Text IO MovieScores
   fetchScores movie = do
-    _ <- liftIO $ putStrLn [i|Fetching scores for <#{movie}>|]
-    id <- toExcept [i|No IMDB ID for <#{movie}>!|] (API.imdbId movie)
-    toExcept [i|No scores <#{movie}>!|] (OMDB.getMovieScores movie id)
+    _ <- liftIO $ putStrLn [qq|Fetching scores for <$movie>|]
+    id <- toExcept [qq|No IMDB ID for <$movie>!|] (API.imdbId movie)
+    toExcept [qq|No scores <$movie>!|] (OMDB.getMovieScores movie id)
   handle = meither (liftIO . putStrLn) MovieScores.addMovieScores
 
 initDatabases :: DbCall()
