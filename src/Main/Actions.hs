@@ -17,6 +17,7 @@ import           Prelude                          hiding (lines, putStrLn, unlin
 
 import           Data.Either.Combinators          (maybeToRight)
 import           Data.Foldable                    (fold, toList, traverse_)
+import           Data.Maybe                       (fromMaybe)
 import qualified Data.Ord
 import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
 import           Data.Text.IO                     (putStrLn)
@@ -50,6 +51,7 @@ import           OMDB                             (MovieScore(_score), MovieScor
 import qualified OMDB
 
 import           Common.ExceptTs                  (meither, toExcept)
+import           Common.Foldables                 (average)
 import           Common.IO                        (getCurrentDate)
 import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
@@ -124,10 +126,8 @@ printUnseenMovies verbose = do
         getScores = runMaybeT . MovieScores.movieScores
       in uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)
     toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
-    sorter :: Maybe MovieScores -> Double
-    sorter = mapMonoid (toList . _scores) >$> _score .> average where
-      -- TODO move to Common
-      average v = if null v then 0 else fromIntegral (sum v) / fromIntegral (length v)
+    sorter :: Maybe MovieScores -> Rational
+    sorter = mapMonoid (toList . _scores) >$> _score .> average .> fromMaybe 0
 
 updateScores :: APIAndDB
 updateScores = withDbPath Movies.allMovies >>= updateScoresForMovies
@@ -155,6 +155,6 @@ updateScoresForMovies = withDbPath . traverseFilter FilteredMovies.isNotFiltered
         fetchedId <- lift $ lift $ runMaybeT $ API.imdbId movie
         _ <- liftDbPath $ ExternalIds.addNullableExternalId movie Types.IMDB fetchedId
         ExceptT $ return $ maybeToRight [qq|No IMDB ID could be fetched for <$movie>! (caching...)|] fetchedId
-        
+
 initDatabases :: DbCall()
 initDatabases = Movies.init >> Persons.init >> Participations.init >> FilteredMovies.init >> MovieScores.init >> FollowedPersons.init >> ExternalIds.init

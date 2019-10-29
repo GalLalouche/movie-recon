@@ -26,4 +26,8 @@ test_all = testGroup "Foldables" [
     , testCase "does not exist" $ F.mapFind map [1..4] @?= Nothing
     , testCase "empty" $ F.mapFind map [] @?= Nothing
     ]
+  , testGroup "average" [
+      testCase "empty returns Nothing" $ F.average [] @?= Nothing
+    , testCase "not empty returns just" $ F.average [1, 2, 3, 4] @?= Just 2.5
+    ]
   ]

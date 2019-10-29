@@ -34,3 +34,6 @@ intercalate incut = aux . toList where
 
 mapFind :: Foldable f => (a -> Maybe b) -> f a -> Maybe b
 mapFind f = getFirst . foldMap (First . f)
+
+average :: (Foldable f, Real a) => f a -> Maybe Rational
+average v = if null v then Nothing else Just $ toRational (sum v) / toRational (length v)
