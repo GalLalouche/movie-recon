@@ -2,7 +2,7 @@
 {-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-module Formatters(
+module Main.Formatters(
   mkStringMovie,
   FullMovieInfo(..),
   mkFullMovieInfoString,

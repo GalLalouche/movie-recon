@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-module Actions(
+module Main.Actions(
   APIAndDB,
   updateMoviesForAllFollowedPersons,
   addFollowedPerson,
@@ -44,7 +44,7 @@ import qualified MovieDB.Database.Movies          as Movies
 import qualified MovieDB.Database.MovieScores     as MovieScores
 import qualified MovieDB.Database.Participations  as Participations
 import qualified MovieDB.Database.Persons         as Persons
-import           MovieDB.Types                    (FilteredMovie(..), Movie(..), Participation(..), Person(..), mkMovieId)
+import           MovieDB.Types                    (FilteredMovie(..), Movie(..), Participation(..), mkMovieId)
 import qualified MovieDB.Types                    as Types
 import           OMDB                             (MovieScore(_score), MovieScores(_scores))
 import qualified OMDB
@@ -59,7 +59,7 @@ import           Common.Traversables              (traverseFproduct)
 import           Common.Vectors                   (sortOn)
 import qualified Common.Vectors                   as Vectors (from)
 
-import qualified Formatters                       as F
+import qualified Main.Formatters                  as F
 
 
 type IAPIAndDB = ReaderT DbPath IO
@@ -94,7 +94,7 @@ addFollowedPerson url ignoreActing = getPerson >>= getMovies >>= updateScoresFor
     releasedParticipations <- filterReleasedAndSave participations
     return $ distinct $ fmap (Types.movie :: Participation -> Movie) releasedParticipations where
       distinct = Vectors.from . Sets.from
-      
+
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do
   ls <- lines . pack <$> liftIO getContents

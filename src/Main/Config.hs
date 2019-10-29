@@ -2,7 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
 
-module Config(Config(..), parseConfig) where
+module Main.Config(Config(..), parseConfig) where
 
 import Data.Text              (Text)
 

@@ -4,8 +4,8 @@ import           Control.Monad.Trans.Reader (runReaderT)
 
 import           MovieDB.Database           (DbCall, DbPath(..), runDbCall)
 
-import qualified Actions
-import qualified Config
+import qualified Main.Actions as Actions
+import qualified Main.Config as Config
 
 
 dbPath = DbPath "db.sqlite"
