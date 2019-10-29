@@ -13,7 +13,7 @@ dbPath = DbPath "db.sqlite"
 withDb :: DbCall a -> IO a
 withDb = flip runDbCall dbPath
 
-withBoth :: Action.APIAndDB -> IO ()
+withBoth :: Action.JoinedAction -> IO ()
 withBoth = flip runReaderT dbPath
 
 main = do

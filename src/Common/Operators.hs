@@ -49,8 +49,7 @@ infixl 4 <$-
 -- fmap equivalent of <**>
 (<$$>) :: Functor f => f a -> (a -> b) -> f b
 (<$$>) = flip (<$>)
-
-infixl 4 <$$> -- Same priority as <**>
+infixl 1 <$$> -- Same priority as >>=
 
 -- fmap equivalent of >=> and <=<
 (>$>) :: Functor m => (a -> m b) -> (b -> c) -> (a -> m c)

@@ -14,6 +14,7 @@ module MovieDB.Database.ExternalIds(
   addNullExternalId,
   addNullableExternalId,
   Nullable(..),
+  ExternalIdRowId,
   externalId,
   imdbId,
 ) where
@@ -30,7 +31,7 @@ import MovieDB.Database.Internal.TypesTH ()
 import MovieDB.Database.Movies           (MovieRowId, toMovieRowId)
 import MovieDB.Types                     (ExternalHost(IMDB), ExternalId, pattern ExternalId, ImdbId, Movie, mkImdbId, toExternalId, IsExternalId)
 
-import Database.Persist.Sql              (Filter, deleteWhere, entityVal, getBy, insert, runMigrationSilent)
+import Database.Persist.Sql              (Filter, deleteWhere, entityVal, getBy, insert, runMigrationSilent, Entity(..))
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
