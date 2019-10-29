@@ -1,33 +1,27 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-module Main.Actions(
+module Main.Action(
   APIAndDB,
   updateMoviesForAllFollowedPersons,
   addFollowedPerson,
-  parseSeenMovies,
-  printUnseenMovies,
+  DB.parseSeenMovies,
+  DB.printUnseenMovies,
   updateScores,
-  initDatabases,
+  DB.initDatabases,
 ) where
 
 import           Prelude                          hiding (lines, putStrLn, unlines)
 
 import           Data.Either.Combinators          (maybeToRight)
-import           Data.Foldable                    (fold, toList, traverse_)
-import           Data.Maybe                       (fromMaybe)
-import qualified Data.Ord
-import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
+import           Data.Foldable                    (fold, traverse_)
+import           Data.Text                        (Text)
 import           Data.Text.IO                     (putStrLn)
 import           Data.Vector                      (Vector)
-import qualified Data.Vector                      as Vector (fromList)
 import           Text.InterpolatedString.Perl6    (qq)
 
-import           Control.Applicative              (liftA2)
-import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (mfilter, unless, (>=>))
+import           Control.Monad                    (unless, (>=>))
 import           Control.Monad.IO.Class           (liftIO)
 import           Control.Monad.Trans.Class        (lift)
 import           Control.Monad.Trans.Except       (ExceptT(..), mapExceptT, throwE)
@@ -37,52 +31,34 @@ import           Data.Functor                     (void)
 
 import           APIs                             (Url(..))
 import qualified MovieDB.API                      as API
-import           MovieDB.Database                 (DbCall, DbPath, withDbPath)
+import           MovieDB.Database                 (DbPath, withDbPath)
 import qualified MovieDB.Database.ExternalIds     as ExternalIds
 import qualified MovieDB.Database.FilteredMovies  as FilteredMovies
 import qualified MovieDB.Database.FollowedPersons as FollowedPersons
 import qualified MovieDB.Database.Movies          as Movies
 import qualified MovieDB.Database.MovieScores     as MovieScores
-import qualified MovieDB.Database.Participations  as Participations
-import qualified MovieDB.Database.Persons         as Persons
-import           MovieDB.Types                    (FilteredMovie(..), Movie(..), Participation(..), mkMovieId)
+import           MovieDB.Types                    (Movie(..), Participation(..))
 import qualified MovieDB.Types                    as Types
-import           OMDB                             (MovieScore(_score), MovieScores(_scores))
+import           OMDB                             (MovieScores)
 import qualified OMDB
 
 import           Common.ExceptTs                  (meither, toExcept)
-import           Common.Foldables                 (average)
-import           Common.IO                        (getCurrentDate)
-import           Common.Maybes                    (mapMonoid, orError)
 import           Common.MonadPluses               (traverseFilter)
-import           Common.Operators
 import qualified Common.Sets                      as Sets (from)
-import           Common.Traversables              (traverseFproduct)
-import           Common.Vectors                   (sortOn)
 import qualified Common.Vectors                   as Vectors (from)
 
-import qualified Main.Formatters                  as F
+import qualified Main.Action.Internal.Database    as DB
 
 
 type IAPIAndDB = ReaderT DbPath IO
 type APIAndDB = IAPIAndDB ()
 liftApi = liftIO
 
-getUnseenMovies :: DbCall (Vector Movie)
-getUnseenMovies = Movies.allMovies >>= traverseFilter FilteredMovies.isNotFiltered
-
 updateMoviesForAllFollowedPersons :: APIAndDB
 updateMoviesForAllFollowedPersons = withDbPath $ do
   followedPersons <- FollowedPersons.allFollowedPersons
   participations <- liftApi $ fold <$> traverse API.personCredits followedPersons
-  void $ filterReleasedAndSave participations
-filterReleasedAndSave :: Vector Participation -> DbCall (Vector Participation)
-filterReleasedAndSave ms = do
-  currentDate <- liftIO getCurrentDate
-  let isReleased (Participation _ m _) = Types.isReleased currentDate m
-  let released = mfilter isReleased ms
-  traverse_ Participations.addValueEntry released
-  return released
+  void $ DB.filterReleasedAndSave participations
 
 addFollowedPerson :: Text -> Bool -> APIAndDB
 addFollowedPerson url ignoreActing = getPerson >>= getMovies >>= updateScoresForMovies where
@@ -93,41 +69,9 @@ addFollowedPerson url ignoreActing = getPerson >>= getMovies >>= updateScoresFor
     return person
   getMovies person = withDbPath $ do
     participations <- liftApi $ API.personCredits person
-    releasedParticipations <- filterReleasedAndSave participations
+    releasedParticipations <- DB.filterReleasedAndSave participations
     return $ distinct $ fmap (Types.movie :: Participation -> Movie) releasedParticipations where
       distinct = Vectors.from . Sets.from
-
-parseSeenMovies :: DbCall ()
-parseSeenMovies = do
-  ls <- lines . pack <$> liftIO getContents
-  movies <- traverse parse ls
-  traverse_ FilteredMovies.addFilteredMovie movies
-  where
-    parse :: Text -> DbCall FilteredMovie
-    parse line = do
-      let r : id = unpack $ head $ splitOn "\t" line
-      let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [qq|Unsupported prefix <$r>|]
-      movie <- getValueOrError $ mkMovieId $ pack id
-      return $ FilteredMovie movie reason
-    getValueOrError mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movies.getValue mid)
-
-printUnseenMovies :: Bool -> DbCall ()
-printUnseenMovies verbose = do
-  movies <- getUnseenMovies
-  extraInfo <- traverseFproduct getExtraInfo movies
-  let formattedMovies = fmap (`F.mkStringMovie` Nothing) movies
-  let formattedParticipations = F.mkFullMovieInfoString . toFullMovieInfo <$> sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
-  liftIO $ putStrLn $ unlines $ toList $ if verbose then formattedParticipations else formattedMovies where
-    getFollowedParticipations :: Movie -> DbCall (Vector Participation)
-    getFollowedParticipations = Participations.getParticipationsForMovie >=>
-        traverseFilter (uncurry FollowedPersons.isFollowed . (Types.participationType &&& Types.person))
-    getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
-    getExtraInfo = let
-        getScores = runMaybeT . MovieScores.movieScores
-      in uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)
-    toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
-    sorter :: Maybe MovieScores -> Rational
-    sorter = mapMonoid (toList . _scores) >$> _score .> average .> fromMaybe 0
 
 updateScores :: APIAndDB
 updateScores = withDbPath Movies.allMovies >>= updateScoresForMovies
@@ -155,6 +99,3 @@ updateScoresForMovies = withDbPath . traverseFilter FilteredMovies.isNotFiltered
         fetchedId <- lift $ lift $ runMaybeT $ API.imdbId movie
         _ <- liftDbPath $ ExternalIds.addNullableExternalId movie Types.IMDB fetchedId
         ExceptT $ return $ maybeToRight [qq|No IMDB ID could be fetched for <$movie>! (caching...)|] fetchedId
-
-initDatabases :: DbCall()
-initDatabases = Movies.init >> Persons.init >> Participations.init >> FilteredMovies.init >> MovieScores.init >> FollowedPersons.init >> ExternalIds.init
