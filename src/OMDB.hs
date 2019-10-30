@@ -16,7 +16,7 @@ import           Text.InterpolatedString.Perl6 (qq)
 
 import           Control.Monad.Trans.Maybe     (MaybeT(..))
 
-import           APIs                          (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
+import           API                           (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
 import           MovieDB.Types                 (ImdbId, pattern ImdbId, Movie)
 
 import           OMDB.Internal                 (MovieScore(MovieScore, _score, _source), Source(..), parse)

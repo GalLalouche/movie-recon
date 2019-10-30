@@ -3,7 +3,7 @@
 
 module MovieDB.API.InternalTest where
 
-import           APIs                 (Url(..))
+import           API                  (Url(..))
 import qualified MovieDB.API.Internal as I
 import           MovieDB.Types        (pattern ImdbId, Movie(..), ParticipationType(Actor, Director, Writer), Person(..), mkMovieId, mkPersonId)
 

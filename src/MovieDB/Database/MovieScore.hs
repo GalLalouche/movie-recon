@@ -6,7 +6,7 @@
 {-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module MovieDB.Database.MovieScores(
+module MovieDB.Database.MovieScore(
   init,
   clear,
   addMovieScores,
@@ -30,7 +30,7 @@ import           Data.Functor                      (void)
 import           MovieDB.Database                  (DbCall, DbMaybe)
 import           MovieDB.Database.Internal.Common  (getValueByRowId)
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
+import           MovieDB.Database.Movie            (MovieRowId, MovieRowable, toMovieRowId)
 import           OMDB                              (MovieScore(..), MovieScores(..), Source)
 
 import           Database.Persist.Sql              (Filter, deleteWhere, entityVal, insert, runMigrationSilent, selectList, (==.))
@@ -53,7 +53,7 @@ init = void $ runMigrationSilent migrateTables
 
 passFilter = [] :: [Filter MovieScoreRow]
 
-clear :: DbCall()
+clear :: DbCall ()
 clear = deleteWhere passFilter
 
 

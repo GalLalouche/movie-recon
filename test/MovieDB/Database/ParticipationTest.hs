@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MovieDB.Database.ParticipationsTest where
+module MovieDB.Database.ParticipationTest where
 
 import           Data.Vector                     (Vector)
 import qualified Data.Vector                     as Vector (fromList)
 
-import           MovieDB.Database.Movies         ()
-import qualified MovieDB.Database.Participations as DB
+import           MovieDB.Database.Movie         ()
+import qualified MovieDB.Database.Participation as DB
 import           MovieDB.Types                   (CastAndCrew(..), Participation(..), ParticipationType(Actor, Director, Writer))
 
 import           Common.MaybeTs                  (fromJust)
@@ -16,7 +16,7 @@ import           MovieDB.Database.TestCommon     (makeMovie, makePerson, withTem
 import           Test.Tasty.HUnit                (testCase, (@?=))
 
 
-test_participations = [
+test_Participation = [
     testCase "read after write" $ do
       let actor1 = makePerson "actor1" 1
       let actor2 = makePerson "actor2" 2

@@ -1,6 +1,6 @@
 {-# LANGUAGE QuasiQuotes #-}
 
-module APIs where
+module API where
 
 import           Prelude                       hiding (readFile)
 

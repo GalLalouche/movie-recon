@@ -6,18 +6,18 @@ module MovieDB.Database.TestCommon (
   makeMovie,
 ) where
 
-import Data.Text                (Text, pack)
-import Data.Time                (fromGregorian)
+import Data.Text               (Text, pack)
+import Data.Time               (fromGregorian)
 
-import MovieDB.Database         (DbCall, DbPath(..), runDbCall)
-import MovieDB.Database.Movies  as Movies (init)
-import MovieDB.Database.Persons as Persons (init)
-import MovieDB.Types            (Movie(..), Person(..), mkMovieId, mkPersonId)
+import MovieDB.Database        (DbCall, DbPath(..), runDbCall)
+import MovieDB.Database.Movie  as Movie (init)
+import MovieDB.Database.Person as Person (init)
+import MovieDB.Types           (Movie(..), Person(..), mkMovieId, mkPersonId)
 
 
 withTempDb :: DbCall a -> IO a
 withTempDb a = runDbCall (initAll >> a) inMemoryDb where
-  initAll = Movies.init >> Persons.init
+  initAll = Movie.init >> Person.init
   inMemoryDb = DbPath ""
 
 makePerson :: Text -> Int -> Person

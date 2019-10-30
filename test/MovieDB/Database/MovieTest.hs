@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MovieDB.Database.MoviesTest where
+module MovieDB.Database.MovieTest where
 
-import qualified MovieDB.Database.Movies     as DB
+import qualified MovieDB.Database.Movie      as DB
 import           MovieDB.Types               (Movie(..), mkMovieId)
 
 import           Control.Monad.Trans.Maybe   (runMaybeT)
@@ -12,7 +12,7 @@ import           MovieDB.Database.TestCommon (withTempDb)
 import           Test.Tasty.HUnit            (testCase, (@?=))
 
 
-test_movie_database = [
+test_Movie = [
     testCase "read after write" $ do
       let id = mkMovieId "42"
       let movie = Movie id "moobar" (fromGregorian 2000 1 1)

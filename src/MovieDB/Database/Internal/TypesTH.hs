@@ -3,7 +3,7 @@
 module MovieDB.Database.Internal.TypesTH where
 
 import Database.Persist.TH (derivePersistField)
-import MovieDB.Types       (FilterReason, ParticipationType, ExternalHost)
+import MovieDB.Types       (ExternalHost, FilterReason, ParticipationType)
 import OMDB                (Source)
 
 -- These have to be in their own file.

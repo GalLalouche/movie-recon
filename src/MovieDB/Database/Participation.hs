@@ -7,7 +7,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module MovieDB.Database.Participations(
+module MovieDB.Database.Participation(
   init,
   clear,
   addEntry,
@@ -30,8 +30,8 @@ import           Data.Functor                      (void)
 import           MovieDB.Database                  (DbCall, DbMaybe)
 import           MovieDB.Database.Internal.Common  (getValueByRowId, insertOrVerify)
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movies           (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import           MovieDB.Database.Persons          (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Database.Movie            (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import           MovieDB.Database.Person           (PersonRowId, PersonRowable, toPersonRowId)
 import           MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
 import           Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
@@ -53,7 +53,7 @@ ParticipationRow sql=participation
 init :: DbCall ()
 init = void $ runMigrationSilent migrateTables
 
-clear :: DbCall()
+clear :: DbCall ()
 clear = deleteWhere ([] :: [Filter ParticipationRow])
 
 

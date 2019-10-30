@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module MovieDB.Database.Movies(
+module MovieDB.Database.Movie(
   init,
   clear,
   getValue,
