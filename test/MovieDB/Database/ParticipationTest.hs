@@ -2,18 +2,16 @@
 
 module MovieDB.Database.ParticipationTest where
 
-import           Data.Vector                     (Vector)
-import qualified Data.Vector                     as Vector (fromList)
-
 import           MovieDB.Database.Movie         ()
 import qualified MovieDB.Database.Participation as DB
-import           MovieDB.Types                   (CastAndCrew(..), Participation(..), ParticipationType(Actor, Director, Writer))
+import           MovieDB.Types                  (CastAndCrew(actors, directors, writers), Participation(..), ParticipationType(Actor, Director, Writer))
 
-import           Common.MaybeTs                  (fromJust)
+import           Common.MaybeTs                 (fromJust)
 
-import           Common.TestCommon               ((*?=))
-import           MovieDB.Database.TestCommon     (makeMovie, makePerson, withTempDb)
-import           Test.Tasty.HUnit                (testCase, (@?=))
+import           Common.TestCommon              ((*?=))
+import           MovieDB.Database.TestCommon    (makeMovie, makePerson, withTempDb)
+import           Test.Tasty                     (testGroup)
+import           Test.Tasty.HUnit               (testCase, (@?=))
 
 
 test_Participation = [
@@ -37,4 +35,16 @@ test_Participation = [
       writers res *?= []
       actors res *?= [actor1, actor3]
       return ()
+  , let
+        person1 = makePerson "actor1" 1
+        person2 = makePerson "actor2" 2
+        movie1 = makeMovie "movie1" 3
+        movie2 = makeMovie "movie2" 4
+        init = DB.init >> DB.addValueEntry (Participation person1 movie1 Actor)
+    in testGroup "hasParticipated" [
+      testCase "participated" $ withTempDb (init >> DB.hasParticipated person1 movie1) >>= (DB.Participated @?=)
+    , testCase "did not participated" $ withTempDb (init >> DB.hasParticipated person2 movie1) >>= (DB.DidNotParticipate @?=)
+    , testCase "unknown1" $ withTempDb (init >> DB.hasParticipated person1 movie2) >>= (DB.Unknown @?=)
+    , testCase "unknown2" $ withTempDb (init >> DB.hasParticipated person2 movie2) >>= (DB.Unknown @?=)
+    ]
   ]
