@@ -30,8 +30,8 @@ import           Data.Functor                      (void)
 import           MovieDB.Database                  (DbCall, DbMaybe)
 import           MovieDB.Database.Internal.Common  (getValueByRowId, insertOrVerify)
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movie            (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import           MovieDB.Database.Person           (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Database.Movie           (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
+import           MovieDB.Database.Person          (PersonRowId, PersonRowable, toPersonRowId)
 import           MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
 import           Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
@@ -92,7 +92,9 @@ castAndCrew m = do
   mid <- toMaybeMovieRowId m
   toCastAndCrew <$> MaybeTs.fromFoldable (getParticipationsForMovie mid)
 
-data EntryResult = Participated | DidNotParticipate | Unknown -- When the movie has no participations at all
+data EntryResult = Participated | DidNotParticipate | Unknown
+  deriving (Show, Eq, Ord)
+-- Returns Unknown the movie has no participations at all.
 hasParticipated :: Person -> Movie -> DbCall EntryResult
-hasParticipated p movie = aux . fmap person <$> getParticipationsForMovie movie where
+hasParticipated p = getParticipationsForMovie >$> aux . fmap person where
   aux crew | null crew = Unknown | p `elem` crew = Participated | otherwise = DidNotParticipate
