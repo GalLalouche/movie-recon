@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module MovieDB.Database where
 
 import Data.Text                    (Text)
@@ -22,3 +24,13 @@ withDbPath action = path <$> ask >>= liftIO . flip runSqlite action
 
 runDbCall :: DbCall a -> DbPath -> IO a
 runDbCall = runReaderT . withDbPath
+
+data Nullable a = NoRow | Null | NotNull a deriving (Show, Eq, Ord, Functor)
+toMaybeMaybe :: Nullable a -> Maybe (Maybe a)
+toMaybeMaybe NoRow       = Nothing
+toMaybeMaybe Null        = Just Nothing
+toMaybeMaybe (NotNull a) = Just $ Just a
+fromMaybeMaybe :: Maybe (Maybe a) -> Nullable a
+fromMaybeMaybe Nothing         = NoRow
+fromMaybeMaybe (Just Nothing)  = Null
+fromMaybeMaybe (Just (Just a)) = NotNull a

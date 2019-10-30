@@ -13,25 +13,23 @@ module MovieDB.Database.ExternalIds(
   addExternalId,
   addNullExternalId,
   addNullableExternalId,
-  Nullable(..),
   ExternalIdRowId,
   externalId,
   imdbId,
 ) where
 
-import Data.Maybe                        (maybe)
 import Data.Text                         (Text)
 import Prelude                           hiding (id, init)
 
 import Control.Monad                     ((>=>))
 import Data.Functor                      (void)
 
-import MovieDB.Database                  (DbCall)
+import MovieDB.Database                  (DbCall, Nullable, fromMaybeMaybe)
 import MovieDB.Database.Internal.TypesTH ()
 import MovieDB.Database.Movies           (MovieRowId, toMovieRowId)
-import MovieDB.Types                     (ExternalHost(IMDB), ExternalId, pattern ExternalId, ImdbId, Movie, mkImdbId, toExternalId, IsExternalId)
+import MovieDB.Types                     (ExternalHost(IMDB), ExternalId, pattern ExternalId, ImdbId, IsExternalId, Movie, mkImdbId, toExternalId)
 
-import Database.Persist.Sql              (Filter, deleteWhere, entityVal, getBy, insert, runMigrationSilent, Entity(..))
+import Database.Persist.Sql              (Entity(..), Filter, deleteWhere, entityVal, getBy, insert, runMigrationSilent)
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
@@ -65,21 +63,15 @@ addNullExternalId m h = do
 
 addNullableExternalId :: IsExternalId eid => Movie -> ExternalHost -> Maybe eid -> DbCall ExternalIdRowId
 addNullableExternalId movie host Nothing = addNullExternalId movie host
-addNullableExternalId movie _ (Just id) = addExternalId $ toExternalId movie id
+addNullableExternalId movie _ (Just id)  = addExternalId $ toExternalId movie id
 
-
-data Nullable a = NoRow | Null | NotNull a deriving (Show, Eq, Ord, Functor)
 
 externalId :: Movie -> ExternalHost -> DbCall (Nullable ExternalId)
 externalId m h = do
   row <- getBy =<< UniqueMovieHost <$> toMovieRowId m <*> return h
-  let mmid = fmap (externalIdRowExternalId . entityVal) row :: Maybe (Maybe Text)
-  return $ case mmid of
-    Nothing  -> NoRow
-    Just mid -> maybe Null externalIdCtor mid
-  where
+  return $ externalIdCtor <$> fromMaybeMaybe (fmap (externalIdRowExternalId . entityVal) row) where
+    externalIdCtor = toExternalId m . idCtor
     idCtor = case h of IMDB -> mkImdbId
-    externalIdCtor = NotNull . toExternalId m . idCtor
 
 imdbId :: Movie -> DbCall (Nullable ImdbId)
 imdbId m = fmap (\(ExternalId _ _ id) -> mkImdbId id) <$> externalId m IMDB

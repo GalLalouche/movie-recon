@@ -30,7 +30,7 @@ import           Data.Functor                     (void)
 
 import           APIs                             (Url(..))
 import qualified MovieDB.API                      as API
-import           MovieDB.Database                 (withDbPath)
+import           MovieDB.Database                 (toMaybeMaybe, withDbPath)
 import qualified MovieDB.Database.ExternalIds     as ExternalIds
 import qualified MovieDB.Database.FilteredMovies  as FilteredMovies
 import qualified MovieDB.Database.FollowedPersons as FollowedPersons
@@ -86,14 +86,10 @@ updateScoresForMovies = withDbPath . traverseFilter FilteredMovies.isNotFiltered
   getImdbId :: Movie -> JoinedError Types.ImdbId
   getImdbId movie = do
     let inserter = ExternalIds.addNullableExternalId movie Types.IMDB
-    let dbGetter = toMaybe <$> ExternalIds.imdbId movie
+    let dbGetter = toMaybeMaybe <$> ExternalIds.imdbId movie
     let fetcher = runMaybeT $ API.imdbId movie
     lift (ActionAPI.getOrFetch inserter dbGetter fetcher) >>= \case
       ActionAPI.Cached id -> getOrElse [qq|Cached Null IMDB ID for <$movie>!|] id
       ActionAPI.Fetched id -> getOrElse [qq|No IMDB ID could be fetched for <$movie>! (caching...)|] id
     where
-      toMaybe :: ExternalIds.Nullable a -> Maybe (Maybe a)
-      toMaybe ExternalIds.NoRow       = Nothing
-      toMaybe ExternalIds.Null        = Just Nothing
-      toMaybe (ExternalIds.NotNull a) = Just $ Just a
       getOrElse = ExceptT .: return .: maybeToRight

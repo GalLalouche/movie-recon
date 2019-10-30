@@ -7,6 +7,7 @@ import           Prelude                      hiding (init)
 
 import           MovieDB.Types                (ExternalHost(IMDB), Movie(..), mkImdbId, mkMovieId, toExternalId)
 
+import           MovieDB.Database             (Nullable(NoRow, NotNull, Null))
 import qualified MovieDB.Database.ExternalIds as EI
 
 import           MovieDB.Database.TestCommon  (withTempDb)
@@ -22,7 +23,7 @@ externalId = toExternalId movie1 (mkImdbId "tt1234")
 setupAndGet m = withTempDb $ EI.init >> EI.addExternalId externalId >> EI.addNullExternalId movie2 IMDB >> EI.externalId m IMDB
 
 test_ExternalIds = [
-    testCase "No row" $ setupAndGet movie3 >>= (EI.NoRow @=?)
-  , testCase "Null ID" $ setupAndGet movie2 >>= (EI.Null @=?)
-  , testCase "NotNull ID" $ setupAndGet movie1 >>= (EI.NotNull externalId @=?)
+    testCase "No row" $ setupAndGet movie3 >>= (NoRow @=?)
+  , testCase "Null ID" $ setupAndGet movie2 >>= (Null @=?)
+  , testCase "NotNull ID" $ setupAndGet movie1 >>= (NotNull externalId @=?)
   ]
