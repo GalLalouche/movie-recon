@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module MovieDB.Database.FollowedPersons(
+module MovieDB.Database.FollowedPerson(
   init,
   clear,
   addFollowedPerson,
@@ -24,7 +24,7 @@ import           Data.Functor                     (void)
 
 import           MovieDB.Database                 (DbCall)
 import           MovieDB.Database.Internal.Common (getValueByRowId)
-import           MovieDB.Database.Persons         (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Database.Person          (PersonRowId, PersonRowable, toPersonRowId)
 import           MovieDB.Types                    (ParticipationType(Actor), Person)
 
 import           Database.Persist.Sql             (Filter, deleteBy, deleteWhere, entityVal, getBy, insert, runMigrationSilent, selectList)

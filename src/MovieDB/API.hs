@@ -24,8 +24,7 @@ import           Control.Monad.Trans.Maybe     (MaybeT(..))
 import qualified MovieDB.API.Internal          as I
 import           MovieDB.Types                 (CastAndCrew(..), ImdbId, Movie(..), Participation(..), ParticipationType, Person(..), pattern PersonId, deepId, toCastAndCrew)
 
-import           APIs                          (ApiCall, ApiMaybe, Url)
-import qualified APIs
+import           API                           (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
 
 import           Common.JsonUtils              (ObjectParser)
 import           Common.Operators
@@ -50,9 +49,9 @@ imdbId m = MaybeT $ runQuery [qq|movie/{deepId m}/external_ids|] I.parseImdbId
 
 runQuery :: Text -> ObjectParser r -> ApiCall r
 runQuery query parser = do
-  key <- APIs.readKey "moviedb"
-  let request = APIs.Url [qq|http://api.themoviedb.org/3/$query?api_key=$key&language=en-US|]
-  liftIO $ APIs.parseRemoteJson request parser
+  key <- readKey "moviedb"
+  let request = Url [qq|http://api.themoviedb.org/3/$query?api_key=$key&language=en-US|]
+  liftIO $ parseRemoteJson request parser
 
 getParticipations ::
     (b -> ParticipationType -> Participation)

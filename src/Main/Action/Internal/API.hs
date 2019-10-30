@@ -6,7 +6,7 @@ import Control.Monad.IO.Class     (liftIO)
 import Control.Monad.Trans.Reader (ReaderT)
 import Data.Functor               (void)
 
-import APIs                       (ApiCall)
+import API                        (ApiCall)
 import MovieDB.Database           (DbCall, DbPath, withDbPath)
 
 

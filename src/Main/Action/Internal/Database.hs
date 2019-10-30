@@ -9,61 +9,61 @@ module Main.Action.Internal.Database(
   initDatabases,
 ) where
 
-import           Prelude                          hiding (lines, putStrLn, unlines)
+import           Prelude                         hiding (lines, putStrLn, unlines)
 
-import           Data.Foldable                    (toList, traverse_)
-import           Data.Maybe                       (fromMaybe)
+import           Data.Foldable                   (toList, traverse_)
+import           Data.Maybe                      (fromMaybe)
 import qualified Data.Ord
-import           Data.Text                        (Text, lines, pack, splitOn, unlines, unpack)
-import           Data.Text.IO                     (putStrLn)
-import           Data.Vector                      (Vector)
-import           Text.InterpolatedString.Perl6    (qq)
+import           Data.Text                       (Text, lines, pack, splitOn, unlines, unpack)
+import           Data.Text.IO                    (putStrLn)
+import           Data.Vector                     (Vector)
+import           Text.InterpolatedString.Perl6   (qq)
 
-import           Control.Applicative              (liftA2)
-import           Control.Arrow                    ((&&&))
-import           Control.Monad                    (mfilter, (>=>))
-import           Control.Monad.IO.Class           (liftIO)
-import           Control.Monad.Trans.Maybe        (MaybeT(..), runMaybeT)
+import           Control.Applicative             (liftA2)
+import           Control.Arrow                   ((&&&))
+import           Control.Monad                   (mfilter, (>=>))
+import           Control.Monad.IO.Class          (liftIO)
+import           Control.Monad.Trans.Maybe       (MaybeT(..), runMaybeT)
 
-import           MovieDB.Database                 (DbCall)
-import qualified MovieDB.Database.ExternalIds     as ExternalIds
-import qualified MovieDB.Database.FilteredMovies  as FilteredMovies
-import qualified MovieDB.Database.FollowedPersons as FollowedPersons
-import qualified MovieDB.Database.Movies          as Movies
-import qualified MovieDB.Database.MovieScores     as MovieScores
-import qualified MovieDB.Database.Participations  as Participations
-import qualified MovieDB.Database.Persons         as Persons
-import           MovieDB.Types                    (FilteredMovie(..), Movie(..), Participation(..), mkMovieId)
-import qualified MovieDB.Types                    as Types
-import           OMDB                             (MovieScore(_score), MovieScores(_scores))
+import           MovieDB.Database                (DbCall)
+import qualified MovieDB.Database.ExternalId     as ExternalId
+import qualified MovieDB.Database.FilteredMovie  as FilteredMovie
+import qualified MovieDB.Database.FollowedPerson as FollowedPerson
+import qualified MovieDB.Database.Movie          as Movie
+import qualified MovieDB.Database.MovieScore     as MovieScore
+import qualified MovieDB.Database.Participation  as Participation
+import qualified MovieDB.Database.Person         as Person
+import           MovieDB.Types                   (FilterReason(Ignored, Seen), FilteredMovie(..), Movie(..), MovieId, Participation(..), mkMovieId)
+import qualified MovieDB.Types                   as Types
+import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 
-import           Common.Foldables                 (average)
-import           Common.IO                        (getCurrentDate)
-import           Common.Maybes                    (mapMonoid, orError)
-import           Common.MonadPluses               (traverseFilter)
+import           Common.Foldables                (average)
+import           Common.IO                       (getCurrentDate)
+import           Common.Maybes                   (mapMonoid, orError)
+import           Common.MonadPluses              (traverseFilter)
 import           Common.Operators
-import           Common.Traversables              (traverseFproduct)
-import           Common.Vectors                   (sortOn)
+import           Common.Traversables             (traverseFproduct)
+import           Common.Vectors                  (sortOn)
 
-import qualified Main.Formatters                  as F
+import qualified Main.Format                     as F
 
 
 getUnseenMovies :: DbCall (Vector Movie)
-getUnseenMovies = Movies.allMovies >>= traverseFilter FilteredMovies.isNotFiltered
+getUnseenMovies = Movie.allMovies >>= traverseFilter FilteredMovie.isNotFiltered
 
 filterReleasedAndSave :: Vector Participation -> DbCall (Vector Participation)
 filterReleasedAndSave ms = do
   currentDate <- liftIO getCurrentDate
   let isReleased (Participation _ m _) = Types.isReleased currentDate m
   let released = mfilter isReleased ms
-  traverse_ Participations.addValueEntry released
+  traverse_ Participation.addValueEntry released
   return released
 
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do
   ls <- lines . pack <$> liftIO getContents
   movies <- traverse parse ls
-  traverse_ FilteredMovies.addFilteredMovie movies
+  traverse_ FilteredMovie.addFilteredMovie movies
   where
     parse :: Text -> DbCall FilteredMovie
     parse line = do
@@ -71,7 +71,7 @@ parseSeenMovies = do
       let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [qq|Unsupported prefix <$r>|]
       movie <- getValueOrError $ mkMovieId $ pack id
       return $ FilteredMovie movie reason
-    getValueOrError mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movies.getValue mid)
+    getValueOrError mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movie.getValue mid)
 
 printUnseenMovies :: Bool -> DbCall ()
 printUnseenMovies verbose = do
@@ -81,15 +81,15 @@ printUnseenMovies verbose = do
   let formattedParticipations = F.mkFullMovieInfoString . toFullMovieInfo <$> sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
   liftIO $ putStrLn $ unlines $ toList $ if verbose then formattedParticipations else formattedMovies where
     getFollowedParticipations :: Movie -> DbCall (Vector Participation)
-    getFollowedParticipations = Participations.getParticipationsForMovie >=>
-        traverseFilter (uncurry FollowedPersons.isFollowed . (Types.participationType &&& Types.person))
+    getFollowedParticipations = Participation.getParticipationsForMovie >=>
+        traverseFilter (uncurry FollowedPerson.isFollowed . (Types.participationType &&& Types.person))
     getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
     getExtraInfo = let
-        getScores = runMaybeT . MovieScores.movieScores
+        getScores = runMaybeT . MovieScore.movieScores
       in uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)
     toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
     sorter :: Maybe MovieScores -> Rational
     sorter = mapMonoid (toList . _scores) >$> _score .> average .> fromMaybe 0
 
 initDatabases :: DbCall ()
-initDatabases = sequence_ [Movies.init, Persons.init, Participations.init, FilteredMovies.init, MovieScores.init, FollowedPersons.init, ExternalIds.init]
+initDatabases = sequence_ [Movie.init, Person.init, Participation.init, FilteredMovie.init, MovieScore.init, FollowedPerson.init, ExternalId.init]

@@ -7,7 +7,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module MovieDB.Database.ExternalIds(
+module MovieDB.Database.ExternalId(
   init,
   clear,
   addExternalId,
@@ -25,7 +25,7 @@ import Data.Functor                      (void)
 
 import MovieDB.Database                  (DbCall, Nullable, fromMaybeMaybe)
 import MovieDB.Database.Internal.TypesTH ()
-import MovieDB.Database.Movies           (MovieRowId, toMovieRowId)
+import MovieDB.Database.Movie            (MovieRowId, toMovieRowId)
 import MovieDB.Types                     (ExternalHost(IMDB), ExternalId, pattern ExternalId, ImdbId, IsExternalId, Movie, mkImdbId, toExternalId)
 
 import Database.Persist.Sql              (Entity(..), Filter, deleteWhere, entityVal, getBy, insert, runMigrationSilent)
@@ -43,7 +43,7 @@ ExternalIdRow sql=external_id
 init :: DbCall ()
 init = void $ runMigrationSilent migrateTables
 
-clear :: DbCall()
+clear :: DbCall ()
 clear = deleteWhere ([] :: [Filter ExternalIdRow])
 
 

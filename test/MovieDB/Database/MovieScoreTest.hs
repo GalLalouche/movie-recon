@@ -1,20 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MovieDB.Database.MovieScoresTest where
+module MovieDB.Database.MovieScoreTest where
 
-import           Control.Monad.Trans.Maybe    (runMaybeT)
-import qualified Data.Set                     as Set (fromList)
-import           Data.Time                    (fromGregorian)
+import           Control.Monad.Trans.Maybe   (runMaybeT)
+import qualified Data.Set                    as Set (fromList)
+import           Data.Time                   (fromGregorian)
 
-import           MovieDB.Types                (Movie(..), mkMovieId)
-import           OMDB                         (MovieScore(..), MovieScores(..), Source(IMDB, Metacritic, RottenTomatoes))
+import           MovieDB.Types               (Movie(..), mkMovieId)
+import           OMDB                        (MovieScore(..), MovieScores(..), Source(IMDB, Metacritic, RottenTomatoes))
 
-import qualified MovieDB.Database.MovieScores as DB
+import qualified MovieDB.Database.MovieScore as DB
 
-import           Common.TestCommon            ((*?=))
-import           MovieDB.Database.TestCommon  (withTempDb)
-import           Test.Tasty                   (testGroup)
-import           Test.Tasty.HUnit             (testCase, (@?=))
+import           Common.TestCommon           ((*?=))
+import           MovieDB.Database.TestCommon (withTempDb)
+import           Test.Tasty                  (testGroup)
+import           Test.Tasty.HUnit            (testCase, (@?=))
 
 
 movie = Movie (mkMovieId "42") "foobar" (fromGregorian 2000 1 1)
@@ -42,7 +42,7 @@ testAllMovieScores = testGroup "allMovieScores" [
         res *?= [movieScores2, movieScores]
   ]
 
-test_MovieScores = [
+test_MovieScore = [
     testMovieScores
   , testAllMovieScores
   ]

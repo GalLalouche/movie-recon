@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module MovieDB.Database.FilteredMovies(
+module MovieDB.Database.FilteredMovie(
   init,
   clear,
   addFilteredMovie,
@@ -31,7 +31,7 @@ import           Data.Functor                      (void)
 import           MovieDB.Database                  (DbCall)
 import           MovieDB.Database.Internal.Common  (getValueByRowId)
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movies           (MovieRowId, MovieRowable, toMovieRowId)
+import           MovieDB.Database.Movie            (MovieRowId, MovieRowable, toMovieRowId)
 import           MovieDB.Types                     (FilterReason, FilteredMovie(..))
 
 import           Common.Operators

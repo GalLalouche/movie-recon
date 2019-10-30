@@ -7,7 +7,7 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module MovieDB.Database.Persons(
+module MovieDB.Database.Person(
   init,
   clear,
   PersonRowId,
@@ -45,7 +45,7 @@ PersonRow sql=person
 init :: DbCall ()
 init = void $ runMigrationSilent migrateTables
 
-clear :: DbCall()
+clear :: DbCall ()
 clear = deleteWhere ([] :: [Filter PersonRow])
 
 makeLensesWith classUnderscoreNoPrefixFields ''PersonId

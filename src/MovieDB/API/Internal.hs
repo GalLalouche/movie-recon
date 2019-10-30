@@ -24,7 +24,7 @@ import           Common.MonadPluses        (catMaybes, fmapMaybes)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
-import           APIs                      (Url(..))
+import           API                      (Url(..))
 import           MovieDB.Types             (ImdbId, Movie(..), MovieId, ParticipationType(..), Person(..), PersonId, mkImdbId, mkMovieId, mkPersonId)
 
 
