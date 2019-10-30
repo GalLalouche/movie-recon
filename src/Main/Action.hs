@@ -36,8 +36,8 @@ import qualified MovieDB.Database.FilteredMovies  as FilteredMovies
 import qualified MovieDB.Database.FollowedPersons as FollowedPersons
 import qualified MovieDB.Database.Movies          as Movies
 import qualified MovieDB.Database.MovieScores     as MovieScores
-import           MovieDB.Types                    (Movie(..), Participation(..))
-import qualified MovieDB.Types                    as Types
+import           MovieDB.Types                    (ImdbId, Movie(..), Participation(movie))
+import qualified MovieDB.Types                    as Types (ExternalHost(IMDB))
 import           OMDB                             (MovieScores)
 import qualified OMDB
 
@@ -65,7 +65,7 @@ addFollowedPerson :: Text -> Bool -> JoinedAction
 addFollowedPerson url ignoreActing = getPerson >>= getParticipations <$$> toMovies >>= updateScoresForMovies where
   getPerson = ActionAPI.cache (FollowedPersons.addFollowedPerson ignoreActing) (API.personName $ Url url)
   getParticipations person = withDbPath $ liftApi (API.personCredits person) >>= DB.filterReleasedAndSave
-  toMovies = distinct . fmap (Types.movie :: Participation -> Movie) where distinct = Vectors.from . Sets.from
+  toMovies = distinct . fmap movie where distinct = Vectors.from . Sets.from
 
 type JoinedError = ExceptT Text JoinedIO
 updateScores :: JoinedAction
@@ -83,7 +83,7 @@ updateScoresForMovies = withDbPath . traverseFilter FilteredMovies.isNotFiltered
     mapExceptT lift $ toExcept [qq|No scores <$movie>!|] (OMDB.getMovieScores movie id)
   handle :: JoinedError MovieScores -> JoinedAction
   handle = meither (liftIO . putStrLn) (withDbPath . MovieScores.addMovieScores)
-  getImdbId :: Movie -> JoinedError Types.ImdbId
+  getImdbId :: Movie -> JoinedError ImdbId
   getImdbId movie = do
     let inserter = ExternalIds.addNullableExternalId movie Types.IMDB
     let dbGetter = toMaybeMaybe <$> ExternalIds.imdbId movie

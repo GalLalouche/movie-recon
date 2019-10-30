@@ -68,7 +68,7 @@ instance ReadOnlyDatabase Person PersonId PersonRowId where
   -- TODO handle code duplication
   valueAndRowId personId = MaybeT $ do
     result <- getBy $ UniquePersonId $ personId ^. id
-    return $  result <$$> (entityKey &&& invertIso . entityVal)
+    return $ result <$$> (entityKey &&& invertIso . entityVal)
   getValueByRowId personRowId = invertIso . fromJust <$> get personRowId
 instance ReadWriteDatabase Person PersonId PersonRowId where
   forceInsert = insert . view rowIso

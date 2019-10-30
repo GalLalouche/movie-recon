@@ -13,7 +13,6 @@ module MovieDB.Database.ExternalIds(
   addExternalId,
   addNullExternalId,
   addNullableExternalId,
-  ExternalIdRowId,
   externalId,
   imdbId,
 ) where
@@ -64,7 +63,6 @@ addNullExternalId m h = do
 addNullableExternalId :: IsExternalId eid => Movie -> ExternalHost -> Maybe eid -> DbCall ExternalIdRowId
 addNullableExternalId movie host Nothing = addNullExternalId movie host
 addNullableExternalId movie _ (Just id)  = addExternalId $ toExternalId movie id
-
 
 externalId :: Movie -> ExternalHost -> DbCall (Nullable ExternalId)
 externalId m h = do

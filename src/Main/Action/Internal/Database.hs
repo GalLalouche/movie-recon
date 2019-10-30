@@ -91,6 +91,5 @@ printUnseenMovies verbose = do
     sorter :: Maybe MovieScores -> Rational
     sorter = mapMonoid (toList . _scores) >$> _score .> average .> fromMaybe 0
 
-initDatabases :: DbCall()
-initDatabases = Movies.init >> Persons.init >> Participations.init >> FilteredMovies.init >> MovieScores.init >> FollowedPersons.init >> ExternalIds.init
-
+initDatabases :: DbCall ()
+initDatabases = sequence_ [Movies.init, Persons.init, Participations.init, FilteredMovies.init, MovieScores.init, FollowedPersons.init, ExternalIds.init]

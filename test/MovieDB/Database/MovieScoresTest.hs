@@ -27,7 +27,7 @@ testMovieScores = testGroup "movieScores" [
         res <- initializeAndGetScores movie2
         res @?= Nothing
     , testCase "has scores returns Just scores" $ do
-        (Just (MovieScores m scores)) <- initializeAndGetScores movie
+        Just (MovieScores m scores) <- initializeAndGetScores movie
         m @?= movie
         scores *?= _scores movieScores
   ] where
