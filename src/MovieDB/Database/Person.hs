@@ -1,3 +1,5 @@
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
@@ -12,7 +14,6 @@ module MovieDB.Database.Person(
   clear,
   PersonRowId,
   PersonRowable,
-  toPersonRowId,
 ) where
 
 import Prelude                          hiding (id, init)
@@ -23,7 +24,7 @@ import Control.Lens                     (classUnderscoreNoPrefixFields, makeLens
 import Data.Functor                     (void)
 
 import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (ReadWriteDatabase(..), RowIso(..), insertOrVerify)
+import MovieDB.Database.Internal.Common (ReadWriteDatabase(..), RowIso(..), ToKey)
 import MovieDB.Types                    (Person(..), PersonId, mkPersonId)
 
 import Database.Persist.Sql             (Filter, deleteWhere, insert, runMigrationSilent)
@@ -55,8 +56,4 @@ instance RowIso Person PersonId PersonRow where
 instance ReadWriteDatabase Person PersonId PersonRow where
   forceInsert person = insert $ entityToRow person
 
-class PersonRowable a where
-  toPersonRowId :: a -> DbCall PersonRowId
-
-instance PersonRowable PersonRowId where toPersonRowId = return
-instance PersonRowable Person where toPersonRowId = insertOrVerify
+type PersonRowable m = ToKey m PersonRow

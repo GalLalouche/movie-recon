@@ -1,10 +1,10 @@
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE QuasiQuotes            #-}
 {-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE UndecidableInstances           #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module MovieDB.Database.Internal.Common where
 
@@ -47,12 +47,13 @@ getValueByRowId id = get id <$$> rowToEntity . fromJust
 class RowIso e eId r => ReadWriteDatabase e eId r where
   forceInsert :: e -> DbCall (Key r)
 
-class ToKey s r where
+class ToKey s r | s -> r where
   getKeyFor :: s -> DbCall (Key r)
 instance (Eq e, Show e, ReadWriteDatabase e eId r) => ToKey e r where
   getKeyFor = insertOrVerify
-instance (ReadWriteDatabase e eId r) => ToKey (Key r) r where
+instance {-# OVERLAPPING #-} (ReadWriteDatabase e eId r) => ToKey (Key r) r where
   getKeyFor = return
+
 
 
 -- If there is already a value with the same ID, inserts the value into and returns the rowId (same as forceInsert).

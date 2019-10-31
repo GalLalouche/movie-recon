@@ -29,9 +29,9 @@ import           Control.Monad                     ((>=>))
 import           Data.Functor                      (void)
 
 import           MovieDB.Database                  (DbCall)
-import           MovieDB.Database.Internal.Common  (getValueByRowId)
+import           MovieDB.Database.Internal.Common  (getValueByRowId, ToKey(..))
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movie            (MovieRowId, MovieRowable, toMovieRowId)
+import           MovieDB.Database.Movie            (MovieRowId, MovieRowable, MovieRow)
 import           MovieDB.Types                     (FilterReason, FilteredMovie(..))
 
 import           Common.Operators
@@ -55,20 +55,19 @@ passFilter = [] :: [Filter FilteredMovieRow]
 clear :: DbCall ()
 clear = deleteWhere passFilter
 
-
-instance MovieRowable FilteredMovie where
-  toMovieRowId = toMovieRowId . _movie
+instance {-# OVERLAPPING #-} ToKey FilteredMovie MovieRow where
+  getKeyFor = getKeyFor . _movie
 
 addFilteredMovie :: FilteredMovie -> DbCall FilteredMovieRowId
 addFilteredMovie = toRow >=> insert where
   toRow :: FilteredMovie -> DbCall FilteredMovieRow
-  toRow fm = FilteredMovieRow <$> toMovieRowId fm <*> return (_reason fm)
+  toRow fm = FilteredMovieRow <$> getKeyFor fm <*> return (_reason fm)
 
 removeFilteredMovie :: FilteredMovie -> DbCall ()
-removeFilteredMovie = toMovieRowId >=> (deleteBy . UniqueMovieId)
+removeFilteredMovie = getKeyFor >=> (deleteBy . UniqueMovieId)
 
 isFiltered :: MovieRowable m => m -> DbCall Bool
-isFiltered = toMovieRowId >=> (fmap isJust . getBy . UniqueMovieId)
+isFiltered = getKeyFor >=> (fmap isJust . getBy . UniqueMovieId)
 
 isNotFiltered :: MovieRowable m => m -> DbCall Bool
 isNotFiltered = not <$< isFiltered
