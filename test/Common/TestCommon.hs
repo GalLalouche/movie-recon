@@ -5,7 +5,7 @@ module Common.TestCommon where
 import Data.Foldable     (toList)
 import Data.List         (sort)
 
-import Control.Exception (SomeException(..), catch)
+import Control.Exception (SomeException(..), catch, try)
 
 import Test.Tasty.HUnit  ((@?), (@?=))
 
@@ -18,7 +18,7 @@ instance Monad Box where
   (Box b) >>= f = f b
 
 assertThrows :: a -> IO ()
-assertThrows a = checkThrows a @? "Expected an some exception to be thrown but none was thrown" where
+assertThrows a = checkThrows a @? "Expected some exception but none was thrown" where
   checkThrows :: a -> IO Bool
   checkThrows a = seq a (return False) `catch` throws where
     throws (SomeException _) = return True

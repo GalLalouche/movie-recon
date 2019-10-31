@@ -4,6 +4,7 @@
 
 module Main.Action.Internal.Database(
   filterReleasedAndSave,
+  parseSeenMovieLine,
   parseSeenMovies,
   printUnseenMovies,
   initDatabases,
@@ -20,7 +21,7 @@ import           Data.Vector                     (Vector)
 import           Text.InterpolatedString.Perl6   (qq)
 
 import           Control.Applicative             (liftA2)
-import           Control.Arrow                   ((&&&))
+import           Control.Arrow                   ((&&&), (***))
 import           Control.Monad                   (mfilter, (>=>))
 import           Control.Monad.IO.Class          (liftIO)
 import           Control.Monad.Trans.Maybe       (MaybeT(..), runMaybeT)
@@ -33,7 +34,7 @@ import qualified MovieDB.Database.Movie          as Movies
 import qualified MovieDB.Database.MovieScore     as MovieScores
 import qualified MovieDB.Database.Participation  as Participations
 import qualified MovieDB.Database.Person         as Persons
-import           MovieDB.Types                   (FilteredMovie(..), Movie(..), Participation(..), mkMovieId)
+import           MovieDB.Types                   (FilterReason(Ignored, Seen), FilteredMovie(..), Movie(..), MovieId, Participation(..), mkMovieId)
 import qualified MovieDB.Types                   as Types
 import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 
@@ -59,6 +60,14 @@ filterReleasedAndSave ms = do
   traverse_ Participations.addValueEntry released
   return released
 
+parseSeenMovieLine :: Text -> (MovieId, FilterReason)
+parseSeenMovieLine line = let
+    r : id = unpack $ head $ splitOn "\t" line
+    reason | r == 'S' = Seen | r == 'I' = Ignored | otherwise = error [qq|Unsupported prefix <$r>|]
+  in (mkMovieId $ pack id, reason)
+
+liftUncurry = uncurry . liftA2
+
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do
   ls <- lines . pack <$> liftIO getContents
@@ -66,12 +75,8 @@ parseSeenMovies = do
   traverse_ FilteredMovies.addFilteredMovie movies
   where
     parse :: Text -> DbCall FilteredMovie
-    parse line = do
-      let r : id = unpack $ head $ splitOn "\t" line
-      let reason | r == 'S' = Types.Seen | r == 'I' = Types.Ignored | otherwise = error [qq|Unsupported prefix <$r>|]
-      movie <- getValueOrError $ mkMovieId $ pack id
-      return $ FilteredMovie movie reason
-    getValueOrError mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movies.getValue mid)
+    parse = liftUncurry FilteredMovie . (getMovie *** return) . parseSeenMovieLine
+    getMovie mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movies.getValue mid)
 
 printUnseenMovies :: Bool -> DbCall ()
 printUnseenMovies verbose = do
@@ -84,9 +89,7 @@ printUnseenMovies verbose = do
     getFollowedParticipations = Participations.getParticipationsForMovie >=>
         traverseFilter (uncurry FollowedPersons.isFollowed . (Types.participationType &&& Types.person))
     getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
-    getExtraInfo = let
-        getScores = runMaybeT . MovieScores.movieScores
-      in uncurry (liftA2 (,)) . (getFollowedParticipations &&& getScores)
+    getExtraInfo = liftUncurry (,) . (getFollowedParticipations &&& runMaybeT . MovieScores.movieScores)
     toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
     sorter :: Maybe MovieScores -> Rational
     sorter = mapMonoid (toList . _scores) >$> _score .> average .> fromMaybe 0
