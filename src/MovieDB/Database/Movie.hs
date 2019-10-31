@@ -1,3 +1,5 @@
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
@@ -16,7 +18,7 @@ module MovieDB.Database.Movie(
   allMovies,
   MovieRowId,
   MovieRowable,
-  toMovieRowId,
+  MovieRowable,
   MaybeMovieRowable,
   toMaybeMovieRowId,
 ) where
@@ -28,12 +30,12 @@ import           Data.Time                        (Day)
 import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as Vector (fromList)
 
-import           Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
+import           Control.Lens                     (classUnderscoreNoPrefixFields, makeLensesWith, (^.))
 import           Control.Monad.Trans.Class        (lift)
 import           Data.Functor                     (void)
 
 import           MovieDB.Database                 (DbCall, DbMaybe)
-import           MovieDB.Database.Internal.Common (ExtractableId(..), GetUniqueId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), RowIso(..), getValue, getValueByRowId, getValueByRowIdImpl, insertOrVerify, valueAndRowIdImpl)
+import           MovieDB.Database.Internal.Common (ReadWriteDatabase(..), RowIso(..), ToKey(..), getRowId, getValue, insertOrVerify)
 import           MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
 
 import           Database.Persist.Sql             (Filter, deleteWhere, entityVal, insert, runMigrationSilent, selectList)
@@ -51,7 +53,9 @@ MovieRow sql=movie
 makeLensesWith classUnderscoreNoPrefixFields ''MovieId
 makeLensesWith classUnderscoreNoPrefixFields ''Movie
 
-instance RowIso Movie MovieRow where
+instance RowIso Movie MovieId MovieRow where
+  extractId = flip (^.) id
+  unique movieId = UniqueMovieId $ movieId ^. id
   entityToRow movie = MovieRow (movie ^. id ^. id) (movie ^. name) (movie ^. date)
   rowToEntity (MovieRow id name date) = Movie (mkMovieId id) name date
 
@@ -66,21 +70,13 @@ clear = deleteWhere passFilter
 allMovies :: DbCall (Vector Movie)
 allMovies = Vector.fromList . fmap (rowToEntity . entityVal) <$> selectList passFilter []
 
-instance ExtractableId Movie MovieId where extractId = view id
-instance GetUniqueId MovieId MovieRow where unique = UniqueMovieId . flip (^.) id
-instance ReadOnlyDatabase Movie MovieId MovieRowId where
-  valueAndRowId = valueAndRowIdImpl
-  getValueByRowId = getValueByRowIdImpl
-instance ReadWriteDatabase Movie MovieId MovieRowId where
+instance ReadWriteDatabase Movie MovieId MovieRow where
   forceInsert = insert . entityToRow
-
-class MovieRowable a where
-  toMovieRowId :: a -> DbCall MovieRowId
-
-instance MovieRowable MovieRowId where toMovieRowId = return
-instance MovieRowable Movie where toMovieRowId = insertOrVerify
 
 class MaybeMovieRowable a where
   toMaybeMovieRowId :: a -> DbMaybe MovieRowId
-instance MovieRowable m => MaybeMovieRowable m where toMaybeMovieRowId m = lift $ toMovieRowId m
-instance MaybeMovieRowable MovieId where toMaybeMovieRowId m = fst <$> valueAndRowId m
+
+type MovieRowable m = ToKey m MovieRow
+
+instance MovieRowable m => MaybeMovieRowable m where toMaybeMovieRowId m = lift $ getKeyFor m
+instance MaybeMovieRowable MovieId where toMaybeMovieRowId = getRowId

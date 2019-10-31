@@ -19,11 +19,11 @@ import Prelude                          hiding (id, init)
 
 import Data.Text                        (Text)
 
-import Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
+import Control.Lens                     (classUnderscoreNoPrefixFields, makeLensesWith, (^.))
 import Data.Functor                     (void)
 
 import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (ExtractableId(..), GetUniqueId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValueByRowIdImpl, insertOrVerify, valueAndRowIdImpl, RowIso(..))
+import MovieDB.Database.Internal.Common (ReadWriteDatabase(..), RowIso(..), insertOrVerify)
 import MovieDB.Types                    (Person(..), PersonId, mkPersonId)
 
 import Database.Persist.Sql             (Filter, deleteWhere, insert, runMigrationSilent)
@@ -46,18 +46,14 @@ clear = deleteWhere ([] :: [Filter PersonRow])
 makeLensesWith classUnderscoreNoPrefixFields ''PersonId
 makeLensesWith classUnderscoreNoPrefixFields ''Person
 
-instance RowIso Person PersonRow where
+instance RowIso Person PersonId PersonRow where
+  extractId = flip (^.) id
+  unique personId = UniquePersonId $ personId ^. id
   entityToRow person = PersonRow (person ^. id ^. id) (person ^. name)
   rowToEntity (PersonRow id name) = Person (mkPersonId id) name
 
-instance ExtractableId Person PersonId where extractId = view id
-instance GetUniqueId PersonId PersonRow where unique = UniquePersonId . flip (^.) id
-
-instance ReadOnlyDatabase Person PersonId PersonRowId where
-  valueAndRowId = valueAndRowIdImpl
-  getValueByRowId = getValueByRowIdImpl
-instance ReadWriteDatabase Person PersonId PersonRowId where
-  forceInsert = insert . entityToRow
+instance ReadWriteDatabase Person PersonId PersonRow where
+  forceInsert person = insert $ entityToRow person
 
 class PersonRowable a where
   toPersonRowId :: a -> DbCall PersonRowId
