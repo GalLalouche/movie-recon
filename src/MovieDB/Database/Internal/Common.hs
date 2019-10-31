@@ -1,42 +1,72 @@
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE QuasiQuotes            #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module MovieDB.Database.Internal.Common where
 
-import Text.InterpolatedString.Perl6 (qq)
+import           Data.Maybe                    (fromJust)
+import           Data.Vector                   (Vector)
+import qualified Data.Vector                   as Vector (fromList)
 
-import Control.Monad.Trans.Maybe     (runMaybeT)
+import           Text.InterpolatedString.Perl6 (qq)
 
-import MovieDB.Database              (DbCall, DbMaybe)
+import           Control.Arrow                 ((&&&))
+import           Control.Monad.Trans.Maybe     (MaybeT(..), runMaybeT)
 
-import Common.Assertions             (assertMsg)
+import           MovieDB.Database              (DbCall, DbMaybe)
+
+import           Database.Persist.Sql          (Key, PersistEntity, PersistEntityBackend, SqlBackend, Unique, entityKey, entityVal, get, getBy, insert, selectList)
+
+import           Common.Assertions             (assertMsg)
+import           Common.Operators
 
 
-class ExtractableId a typeId | a -> typeId where
-  extractId :: a -> typeId
+class (PersistEntity row, PersistEntityBackend row ~ SqlBackend) =>
+    RowIso entity entityId row
+    | entity -> entityId row
+    , entityId -> entity row
+    , row -> entity entityId where
+  extractId :: entity -> entityId
+  unique :: entityId -> Unique row
+  entityToRow :: entity -> row
+  rowToEntity :: row -> entity
 
-class ExtractableId a typeId => ReadOnlyDatabase a typeId rowId | typeId -> rowId a where
-  valueAndRowId :: typeId -> DbMaybe (rowId, a)
-  -- If someone passes a row ID, it means the value should damn well be there.
-  getValueByRowId :: rowId -> DbCall a
+valueAndRowId :: RowIso e eId r => eId -> DbMaybe (Key r, e)
+valueAndRowId entityId = MaybeT $ do
+  result <- getBy $ unique entityId
+  return $ result <$$> (entityKey &&& rowToEntity . entityVal)
+getRowId :: RowIso e eId r => eId -> DbMaybe (Key r)
+getRowId = fst <$< valueAndRowId
+getValue :: RowIso e eId r => eId -> DbMaybe e
+getValue = snd <$< valueAndRowId
+  -- If someone passes a row ID, then the value should damn well be there.
+getValueByRowId :: RowIso e eId r => Key r -> DbCall e
+getValueByRowId id = get id <$$> rowToEntity . fromJust
 
-class ReadOnlyDatabase a typeId rowId => ReadWriteDatabase a typeId rowId | typeId a -> rowId where
-  forceInsert :: a -> DbCall rowId
+getAll :: RowIso e eId r => DbCall (Vector e)
+getAll = Vector.fromList . fmap (rowToEntity . entityVal) <$> selectList [] []
 
-getValue :: ReadOnlyDatabase a typeId rowId => typeId -> DbMaybe a
-getValue id = snd <$> valueAndRowId id
 
-getRowId :: ReadOnlyDatabase a typeId rowId => typeId -> DbMaybe rowId
-getRowId id = fst <$> valueAndRowId id
-
+forceInsert :: RowIso e eId r => e -> DbCall (Key r)
+forceInsert = insert . entityToRow
 -- If there is already a value with the same ID, inserts the value into and returns the rowId (same as forceInsert).
 -- If there is a matching ID, checks if the existing value is the same the new value, and throw an exception if
 -- it's not. If it is the same, returns the existing rowId.
-insertOrVerify :: (ReadWriteDatabase a typeId rowId, Show a, Eq a) => a -> DbCall rowId
+insertOrVerify :: (RowIso a typeId r, Show a, Eq a) => a -> DbCall (Key r)
 insertOrVerify newValue = runMaybeT (valueAndRowId $ extractId newValue) >>= \case
     Nothing -> forceInsert newValue
     Just (rowId, existingValue) -> return $ assertMsg same msg rowId where
       same = existingValue == newValue
       msg = [qq|Existing value <$existingValue> was different from new value <$newValue>|]
+
+class ToKey s r | s -> r where
+  getKeyFor :: s -> DbCall (Key r)
+instance (Eq e, Show e, RowIso e eId r) => ToKey e r where
+  getKeyFor = insertOrVerify
+instance {-# OVERLAPPING #-} (RowIso e eId r) => ToKey (Key r) r where
+  getKeyFor = return
+

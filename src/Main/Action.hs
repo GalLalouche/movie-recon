@@ -69,7 +69,7 @@ addFollowedPerson url ignoreActing = getPerson >>= getParticipations <$$> toMovi
 
 type JoinedError = ExceptT Text JoinedIO
 updateScores :: JoinedAction
-updateScores = withDbPath Movie.allMovies >>= updateScoresForMovies
+updateScores = withDbPath Movie.getAll >>= updateScoresForMovies
 updateScoresForMovies :: Vector Movie -> JoinedAction
 updateScoresForMovies = withDbPath . traverseFilter FilteredMovie.isNotFiltered >=> traverse_ updateScore where
   updateScore :: Movie -> JoinedAction

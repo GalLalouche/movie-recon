@@ -50,7 +50,7 @@ import qualified Main.Format                     as F
 
 
 getUnseenMovies :: DbCall (Vector Movie)
-getUnseenMovies = Movie.allMovies >>= traverseFilter FilteredMovie.isNotFiltered
+getUnseenMovies = Movie.getAll >>= traverseFilter FilteredMovie.isNotFiltered
 
 filterReleasedAndSave :: Vector Participation -> DbCall (Vector Participation)
 filterReleasedAndSave ms = do

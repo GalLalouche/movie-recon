@@ -9,7 +9,6 @@
 
 module MovieDB.Database.Participation(
   init,
-  clear,
   addEntry,
   addValueEntry,
   hasParticipated,
@@ -24,17 +23,18 @@ import           Prelude                           hiding (elem, init)
 import           Data.Vector                       (Vector, elem)
 import qualified Data.Vector                       as Vector (fromList)
 
+import           Control.Monad.Trans.Class         (lift)
 import           Control.Monad.Trans.Maybe         (MaybeT(..), runMaybeT)
 import           Data.Functor                      (void)
 
 import           MovieDB.Database                  (DbCall, DbMaybe)
-import           MovieDB.Database.Internal.Common  (getValueByRowId, insertOrVerify)
+import           MovieDB.Database.Internal.Common  (getKeyFor, getValueByRowId, insertOrVerify)
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movie           (MaybeMovieRowable, MovieRowId, MovieRowable, toMaybeMovieRowId, toMovieRowId)
-import           MovieDB.Database.Person          (PersonRowId, PersonRowable, toPersonRowId)
+import           MovieDB.Database.Movie            (MovieRowId, MovieRowable)
+import           MovieDB.Database.Person           (PersonRowId, PersonRowable)
 import           MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
 
-import           Database.Persist.Sql              (Filter, deleteWhere, entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
+import           Database.Persist.Sql              (entityKey, entityVal, getBy, insert, runMigrationSilent, selectList, (==.))
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import           Common.Foldables                  (mapHeadOrElse)
@@ -52,9 +52,6 @@ ParticipationRow sql=participation
 
 init :: DbCall ()
 init = void $ runMigrationSilent migrateTables
-
-clear :: DbCall ()
-clear = deleteWhere ([] :: [Filter ParticipationRow])
 
 
 getEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbMaybe ParticipationRowId
@@ -81,15 +78,15 @@ participationsAux column rowIdExtractor value = do
   traverse toParticipation result
 
 getParticipationsForMovie :: MovieRowable m => m -> DbCall (Vector Participation)
-getParticipationsForMovie = participationsAux ParticipationRowMovieId toMovieRowId
+getParticipationsForMovie = participationsAux ParticipationRowMovieId getKeyFor
 
 getParticipationsForPerson :: PersonRowable p => p -> DbCall (Vector Participation)
-getParticipationsForPerson = participationsAux ParticipationRowPersonId toPersonRowId
+getParticipationsForPerson = participationsAux ParticipationRowPersonId getKeyFor
 
 -- "Nothing" is returned if there are no participation entries for the movie.
-castAndCrew :: MaybeMovieRowable m => m -> DbMaybe CastAndCrew
+castAndCrew :: Movie -> DbMaybe CastAndCrew
 castAndCrew m = do
-  mid <- toMaybeMovieRowId m
+  mid <- lift $ getKeyFor m
   toCastAndCrew <$> MaybeTs.fromFoldable (getParticipationsForMovie mid)
 
 data EntryResult = Participated | DidNotParticipate | Unknown

@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -8,7 +9,6 @@
 
 module MovieDB.Database.MovieScore(
   init,
-  clear,
   addMovieScores,
   movieScores,
   hasMovieScores,
@@ -28,12 +28,12 @@ import           Control.Monad.Trans.Maybe         (MaybeT(..))
 import           Data.Functor                      (void)
 
 import           MovieDB.Database                  (DbCall, DbMaybe)
-import           MovieDB.Database.Internal.Common  (getValueByRowId)
+import           MovieDB.Database.Internal.Common  (getKeyFor, getValueByRowId)
 import           MovieDB.Database.Internal.TypesTH ()
-import           MovieDB.Database.Movie            (MovieRowId, MovieRowable, toMovieRowId)
+import           MovieDB.Database.Movie            (MovieRowId, MovieRowable)
 import           OMDB                              (MovieScore(..), MovieScores(..), Source)
 
-import           Database.Persist.Sql              (Filter, deleteWhere, entityVal, insert, runMigrationSilent, selectList, (==.))
+import           Database.Persist.Sql              (entityVal, insert, runMigrationSilent, selectList, (==.))
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import qualified Common.Maps                       as Maps
@@ -51,15 +51,10 @@ MovieScoreRow sql=movie_score
 init :: DbCall ()
 init = void $ runMigrationSilent migrateTables
 
-passFilter = [] :: [Filter MovieScoreRow]
-
-clear :: DbCall ()
-clear = deleteWhere passFilter
-
 
 addMovieScores :: MovieScores -> DbCall ()
 addMovieScores (MovieScores m ss) = do
-  mid <- toMovieRowId m
+  mid <- getKeyFor m
   let scores = (mid, ) <$> toList ss
   traverse_ (uncurry addMovieScore) scores where
     addMovieScore :: MovieRowId -> MovieScore -> DbCall MovieScoreRowId
@@ -74,7 +69,7 @@ toMovieScores result = do
 -- Returns nothing if there are no scores for the movie
 movieScores :: MovieRowable m => m -> DbMaybe MovieScores
 movieScores m = MaybeT $ do
-  mid <- toMovieRowId m
+  mid <- getKeyFor m
   result <- map entityVal <$> selectList [MovieScoreRowMovieId ==. mid] []
   if null result then return Nothing else Just <$> toMovieScores result
 
@@ -83,7 +78,7 @@ hasMovieScores = isJust . movieScores
 
 allMovieScores :: DbCall (Vector MovieScores)
 allMovieScores = do
-  result <- fmap (pure . entityVal) <$> selectList passFilter []
+  result <- fmap (pure . entityVal) <$> selectList [] []
   scores <- traverse toMovieScores result
   let movieScoresPairs = Map.assocs $ Maps.semigroupMapBy _movie _scores scores
   return $ Vector.fromList $ map (uncurry MovieScores) movieScoresPairs

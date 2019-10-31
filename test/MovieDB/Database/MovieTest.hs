@@ -2,14 +2,15 @@
 
 module MovieDB.Database.MovieTest where
 
-import qualified MovieDB.Database.Movie      as DB
-import           MovieDB.Types               (Movie(..), mkMovieId)
+import           MovieDB.Database.Internal.Common (insertOrVerify)
+import qualified MovieDB.Database.Movie           as DB
+import           MovieDB.Types                    (Movie(..), mkMovieId)
 
-import           Control.Monad.Trans.Maybe   (runMaybeT)
-import           Data.Time                   (fromGregorian)
+import           Control.Monad.Trans.Maybe        (runMaybeT)
+import           Data.Time                        (fromGregorian)
 
-import           MovieDB.Database.TestCommon (withTempDb)
-import           Test.Tasty.HUnit            (testCase, (@?=))
+import           MovieDB.Database.TestCommon      (withTempDb)
+import           Test.Tasty.HUnit                 (testCase, (@?=))
 
 
 test_Movie = [
@@ -18,7 +19,7 @@ test_Movie = [
       let movie = Movie id "moobar" (fromGregorian 2000 1 1)
       res <- withTempDb $ do
         DB.init
-        DB.insertOrVerify movie
+        insertOrVerify movie
         runMaybeT $ DB.getValue id
       res @?= Just movie
   ]
