@@ -17,22 +17,17 @@ module MovieDB.Database.Person(
 
 import Prelude                          hiding (id, init)
 
-import Data.Maybe                       (fromJust)
 import Data.Text                        (Text)
 
-import Control.Arrow                    ((&&&))
 import Control.Lens                     (Iso', classUnderscoreNoPrefixFields, from, iso, makeLensesWith, view, (^.))
-import Control.Monad.Trans.Maybe        (MaybeT(..))
 import Data.Functor                     (void)
 
 import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (ExtractableId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), insertOrVerify)
+import MovieDB.Database.Internal.Common (ExtractableId(..), GetUniqueId(..), ReadOnlyDatabase(..), ReadWriteDatabase(..), getValueByRowIdImpl, insertOrVerify, valueAndRowIdImpl, RowIso(..))
 import MovieDB.Types                    (Person(..), PersonId, mkPersonId)
 
-import Database.Persist.Sql             (Filter, deleteWhere, entityKey, entityVal, get, getBy, insert, runMigrationSilent)
+import Database.Persist.Sql             (Filter, deleteWhere, insert, runMigrationSilent)
 import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
-
-import Common.Operators
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -51,27 +46,18 @@ clear = deleteWhere ([] :: [Filter PersonRow])
 makeLensesWith classUnderscoreNoPrefixFields ''PersonId
 makeLensesWith classUnderscoreNoPrefixFields ''Person
 
-rowIso :: Iso' Person PersonRow
-rowIso = iso fromPerson toPerson where
-  fromPerson :: Person -> PersonRow
-  fromPerson person = PersonRow (person ^. id ^. id) (person ^. name)
-  toPerson :: PersonRow -> Person
-  toPerson (PersonRow id name) = Person (mkPersonId id) name
+instance RowIso Person PersonRow where
+  entityToRow person = PersonRow (person ^. id ^. id) (person ^. name)
+  rowToEntity (PersonRow id name) = Person (mkPersonId id) name
 
-invertIso :: PersonRow -> Person
-invertIso = view (from rowIso)
+instance ExtractableId Person PersonId where extractId = view id
+instance GetUniqueId PersonId PersonRow where unique = UniquePersonId . flip (^.) id
 
-
-instance ExtractableId Person PersonId where
-  extractId = view id
 instance ReadOnlyDatabase Person PersonId PersonRowId where
-  -- TODO handle code duplication
-  valueAndRowId personId = MaybeT $ do
-    result <- getBy $ UniquePersonId $ personId ^. id
-    return $ result <$$> (entityKey &&& invertIso . entityVal)
-  getValueByRowId personRowId = invertIso . fromJust <$> get personRowId
+  valueAndRowId = valueAndRowIdImpl
+  getValueByRowId = getValueByRowIdImpl
 instance ReadWriteDatabase Person PersonId PersonRowId where
-  forceInsert = insert . view rowIso
+  forceInsert = insert . entityToRow
 
 class PersonRowable a where
   toPersonRowId :: a -> DbCall PersonRowId
