@@ -34,7 +34,7 @@ import qualified MovieDB.Database.Movie          as Movie
 import qualified MovieDB.Database.MovieScore     as MovieScore
 import qualified MovieDB.Database.Participation  as Participation
 import qualified MovieDB.Database.Person         as Person
-import           MovieDB.Types                   (FilterReason(Ignored, Seen), FilteredMovie(..), Movie(..), MovieId, Participation(..), mkMovieId)
+import           MovieDB.Types                   (FilterReason(Ignored, LowScores, Seen), FilteredMovie(..), Movie(..), MovieId, Participation(..), mkMovieId)
 import qualified MovieDB.Types                   as Types
 import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 
@@ -63,7 +63,7 @@ filterReleasedAndSave ms = do
 parseSeenMovieLine :: Text -> (MovieId, FilterReason)
 parseSeenMovieLine line = let
     r : id = unpack $ head $ splitOn "\t" line
-    reason | r == 'S' = Seen | r == 'I' = Ignored | otherwise = error [qq|Unsupported prefix <$r>|]
+    reason | r == 'S' = Seen | r == 'I' = Ignored | r == 'L' = LowScores | otherwise = error [qq|Unsupported prefix <$r>|]
   in (mkMovieId $ pack id, reason)
 
 liftUncurry = uncurry . liftA2

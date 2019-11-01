@@ -86,7 +86,7 @@ data Movie = Movie
 isReleased :: Day -> Movie -> Bool
 isReleased today (Movie _ _ date) = date <= today
 
-data FilterReason = Ignored | Seen deriving (Show, Read, Eq, Ord)
+data FilterReason = Ignored | Seen | LowScores deriving (Show, Read, Eq, Ord)
 data FilteredMovie = FilteredMovie
   { _movie  :: Movie
   , _reason :: FilterReason

@@ -23,7 +23,7 @@ data Config =
 initDatabases = Init &= help "Initializes all databases"
 updateSeen = UpdateSeen &= help (
     "Reads a list of seen movie IDs to update seen movies from stdin.\n" ++
-    "Every line should start with an I or S (Ignored or Seen), followed by an ID, " ++
+    "Every line should start with an I, S, or L (Ignored, Seen, or Low scores), followed by an ID, " ++
     "and optionally more text separated by <TAB>. Example line:\n" ++
     "\"S299536<TAB>Avengers: Infinity War<TAB>2018-04-27\""
   )
