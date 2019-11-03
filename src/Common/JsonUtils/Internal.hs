@@ -91,4 +91,3 @@ objects = array >==> traverse asObject
 fromSuccess :: Result a -> a
 fromSuccess (Success a) = a
 fromSuccess (Error e)   = error e
-

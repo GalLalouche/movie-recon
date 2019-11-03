@@ -18,4 +18,3 @@ test_MainActionInternalDatabase = [
     , testCase "invalid prefix" $ assertThrows $ snd $ DB.parseSeenMovieLine "K1234"
     ]
   ]
-

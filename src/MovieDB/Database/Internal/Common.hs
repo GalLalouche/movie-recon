@@ -69,4 +69,3 @@ instance (Eq e, Show e, RowIso e eId r) => ToKey e r where
   getKeyFor = insertOrVerify
 instance {-# OVERLAPPING #-} (RowIso e eId r) => ToKey (Key r) r where
   getKeyFor = return
-

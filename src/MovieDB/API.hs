@@ -3,7 +3,6 @@
 {-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-
 module MovieDB.API(
   ApiCall,
   castAndCrew,

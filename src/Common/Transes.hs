@@ -17,6 +17,7 @@ import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
 import Common.Operators
 
+
 class (MonadTrans t, Monad tm) => RunnableMonadTrans t tm where
   run :: Monad m => t m a -> m (tm a)
   wrap :: Monad m => m (tm a) -> t m a
