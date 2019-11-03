@@ -24,5 +24,5 @@ cache insert api = do
 data CacheResult a = Cached a | Fetched a
 getOrFetch :: Inserter a b -> DbCall (Maybe a) -> ApiCall a -> JoinedIO (CacheResult a)
 getOrFetch inserter db api = withDbPath db >>= \case
-  Just x  -> return $ Cached x
+  Just x  -> Cached <$> return x
   Nothing -> Fetched <$> cache inserter api

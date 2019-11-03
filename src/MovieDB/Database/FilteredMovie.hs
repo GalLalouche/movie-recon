@@ -58,7 +58,7 @@ addFilteredMovie = toRow >=> insert where
   toRow fm = FilteredMovieRow <$> getKeyFor fm <*> return (_reason fm)
 
 isFiltered :: MovieRowable m => m -> DbCall Bool
-isFiltered = getKeyFor >=> (fmap isJust . getBy . UniqueMovieId)
+isFiltered = getKeyFor >=> fmap isJust . getBy . UniqueMovieId
 
 isNotFiltered :: MovieRowable m => m -> DbCall Bool
 isNotFiltered = not <$< isFiltered

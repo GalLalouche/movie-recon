@@ -18,7 +18,7 @@ module MovieDB.Database.MovieScore(
 import           Prelude                           hiding (init)
 
 import           Data.Foldable                     (toList, traverse_)
-import qualified Data.Map                          as Map (assocs)
+import qualified Data.Map.Strict                   as Map (assocs)
 import qualified Data.Set                          as Set (fromList)
 import           Data.Vector                       (Vector)
 import qualified Data.Vector                       as Vector (fromList)

@@ -20,7 +20,7 @@ movie2 = Movie (mkMovieId "54") "bazz" (fromGregorian 1999 1 1)
 movie3 = Movie (mkMovieId "1234") "quxx" (fromGregorian 1999 1 1)
 
 externalId = toExternalId movie1 (mkImdbId "tt1234")
-setupAndGet m = withTempDb $ EI.init >> EI.addExternalId externalId >> EI.addNullExternalId movie2 IMDB >> EI.externalId m IMDB
+setupAndGet m = withTempDb $ EI.init >> EI.addExternalId externalId >> EI.addNullExternalId movie2 IMDB >> EI.externalId IMDB m
 
 test_ExternalId = [
     testCase "No row" $ setupAndGet movie3 >>= (NoRow @=?)

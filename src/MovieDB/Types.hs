@@ -21,7 +21,7 @@ module MovieDB.Types(
   mkMovieId,
   toCastAndCrew,
   ExternalHost(..),
-  ExternalId,
+  ExternalId(_id, _host, _movie),
   pattern ExternalId,
   IsExternalId,
   toExternalId,

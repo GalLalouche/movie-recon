@@ -40,7 +40,7 @@ personName :: Url -> ApiCall Person
 personName url = do
   let pid@(PersonId id) = I.parseId url
   name <- runQuery [qq|person/$id|] I.parsePersonName
-  return $ Person {_id = pid, _name = name}
+  return $ Person pid name
 
 imdbId :: Movie -> ApiMaybe ImdbId
 imdbId m = MaybeT $ runQuery [qq|movie/{deepId m}/external_ids|] I.parseImdbId
