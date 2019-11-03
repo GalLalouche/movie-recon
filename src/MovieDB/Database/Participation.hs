@@ -70,7 +70,7 @@ addValueEntry (Participation person movie pt) = do
 
 toParticipation :: ParticipationRow -> DbCall Participation
 toParticipation (ParticipationRow pid mid pt) =
- Participation <$> getValueByRowId pid <*> getValueByRowId mid <*> return pt
+ Participation <$> getValueByRowId pid <*> getValueByRowId mid <*$> pt
 
 participationsAux column rowIdExtractor value = do
   rowId <- rowIdExtractor value

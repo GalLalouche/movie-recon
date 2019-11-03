@@ -49,14 +49,10 @@ init = void $ runMigrationSilent migrateTables
 addExternalId :: ExternalId -> DbCall ExternalIdRowId
 addExternalId = toRow >=> insert where
   toRow :: ExternalId -> DbCall ExternalIdRow
-  toRow (ExternalId m h i) = do
-    mrid <- getKeyFor m
-    return $ ExternalIdRow mrid h (Just i)
+  toRow (ExternalId m h i) = ExternalIdRow <$> getKeyFor m <*$> h <*$> Just i
 
 addNullExternalId :: Movie -> ExternalHost -> DbCall ExternalIdRowId
-addNullExternalId m h = do
-  mrid <- getKeyFor m
-  insert $ ExternalIdRow mrid h Nothing
+addNullExternalId m h = insert =<< ExternalIdRow <$> getKeyFor m <*$> h <*$> Nothing
 
 addNullableExternalId :: IsExternalId eid => Movie -> ExternalHost -> Maybe eid -> DbCall ExternalIdRowId
 addNullableExternalId movie host Nothing = addNullExternalId movie host
@@ -64,7 +60,7 @@ addNullableExternalId movie _ (Just id)  = addExternalId $ toExternalId movie id
 
 externalId :: ExternalHost -> Movie -> DbCall (Nullable ExternalId)
 externalId h m = do
-  row <- getBy =<< UniqueMovieHost <$> getKeyFor m <*> return h
+  row <- getBy =<< UniqueMovieHost <$> getKeyFor m <*$> h
   return $ externalIdCtor <$> fromMaybeMaybe (fmap (externalIdRowExternalId . entityVal) row) where
     externalIdCtor = toExternalId m . idCtor
     idCtor = case h of IMDB -> mkImdbId

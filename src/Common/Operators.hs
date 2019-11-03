@@ -47,6 +47,7 @@ infixl 4 -$>
 infixl 4 <$-
 
 -- fmap equivalent of <**>
+-- In lens, this is define as (<&>) but I like the symmetry w.r.t. <**>
 (<$$>) :: Functor f => f a -> (a -> b) -> f b
 (<$$>) = flip (<$>)
 infixl 1 <$$> -- Same priority as >>=
@@ -78,9 +79,22 @@ infixr 1 >$$> -- same priority as >$>
 (<$$<) = flip (>$$>)
 infixr 1 <$$< -- same priority as <$<
 
-(<&>) :: Applicative m => m (a -> b) -> a -> m b
-f <&> x = f <*> pure x
-infixl 4 <&> -- same priority as <*>
+-- Allows for the following syntax:
+-- > ctor <$> monadic_a <*$> non_monadic_b <*$> non_monadic_c
+-- As opposed to:
+-- > ctor <$> monadic_a <*> return non_monadic_b <*> return non_monadic_c
+-- In lens and other places, this is named (??), but I like the symmetry of <$*> better.
+(<*$>) :: Applicative m => m (a -> b) -> a -> m b
+f <*$> x = f <*> pure x
+infixl 4 <*$> -- same priority as <*>
+
+-- Allows for the following syntax:
+-- > ctor <$*> non_monadic_a <*> monadic_b
+-- As opposed to:
+-- > ctor <$> return non_monadic_a <*> monadic_b
+(<$*>) :: Applicative m => (a -> b) -> a -> m b
+(<$*>) f x = f <$> pure x
+infixl 4 <$*> -- same priority as <*>
 
 -- Operator taken from here: https://stackoverflow.com/a/51097392/736508
 (.:) :: (midResult -> finalResult) -> (a -> b -> midResult) -> (a -> b -> finalResult)

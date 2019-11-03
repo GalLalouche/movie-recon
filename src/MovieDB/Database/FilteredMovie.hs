@@ -55,7 +55,7 @@ instance {-# OVERLAPPING #-} ToKey FilteredMovie MovieRow where
 addFilteredMovie :: FilteredMovie -> DbCall FilteredMovieRowId
 addFilteredMovie = toRow >=> insert where
   toRow :: FilteredMovie -> DbCall FilteredMovieRow
-  toRow fm = FilteredMovieRow <$> getKeyFor fm <*> return (_reason fm)
+  toRow fm = FilteredMovieRow <$> getKeyFor fm <*$> _reason fm
 
 isFiltered :: MovieRowable m => m -> DbCall Bool
 isFiltered = getKeyFor >=> fmap isJust . getBy . UniqueMovieId

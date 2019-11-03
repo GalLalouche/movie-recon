@@ -24,6 +24,7 @@ import           OMDB.Internal                 (MovieScore(MovieScore, _score, _
 import           Common.Foldables              (notNull)
 import qualified Common.Maps                   as Maps
 import           Common.Maybes                 (check)
+import           Common.Operators
 import qualified Common.Sets                   as Sets
 
 
@@ -42,6 +43,4 @@ scoreMap :: MovieScores -> Map Source Int
 scoreMap = Maps.fromFoldable _source _score . _scores
 
 getMovieScores :: Movie -> ImdbId -> ApiMaybe MovieScores
-getMovieScores m id = do
-  score <- getScore id
-  return $ MovieScores m score
+getMovieScores m id = MovieScores <$*> m <*> getScore id
