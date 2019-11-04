@@ -2,7 +2,7 @@
 {-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
-module Main.Format(
+module Main.Action.Internal.Format(
   mkStringMovie,
   FullMovieInfo(..),
   mkFullMovieInfoString,
@@ -37,7 +37,12 @@ mkStringMovie (Movie (MovieId id) name date) ms = let
       in [qq|$score $shortSource|]
   in [qq|$id$tab$name$tab$date$tab$scoreString|]
 
-data FullMovieInfo = FullMovieInfo Movie (Vector Participation) (Maybe MovieScores)
+data FullMovieInfo = FullMovieInfo 
+  { movie :: Movie
+  , participations :: Vector Participation
+  , scores :: Maybe MovieScores
+  }
+
 mkFullMovieInfoString :: FullMovieInfo -> Text
 mkFullMovieInfoString (FullMovieInfo m ps ms) = let
     movieString = mkStringMovie m ms

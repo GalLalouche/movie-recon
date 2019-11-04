@@ -38,7 +38,7 @@ import           MovieDB.Types                   (FilterReason(Ignored, LowScore
 import qualified MovieDB.Types                   as Types
 import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 
-import           Common.Foldables                (average)
+import           Common.Foldables                (average, notNull)
 import           Common.IO                       (getCurrentDate)
 import           Common.Maybes                   (mapMonoid, orError)
 import           Common.MonadPluses              (traverseFilter)
@@ -46,11 +46,8 @@ import           Common.Operators                ((.>), (>$>))
 import           Common.Traversables             (traverseFproduct)
 import           Common.Vectors                  (sortOn)
 
-import qualified Main.Format                     as F
+import qualified Main.Action.Internal.Format     as F
 
-
-getUnseenMovies :: DbCall (Vector Movie)
-getUnseenMovies = Movie.getAll >>= traverseFilter FilteredMovie.isNotFiltered
 
 filterReleasedAndSave :: Vector Participation -> DbCall (Vector Participation)
 filterReleasedAndSave ms = do
@@ -80,11 +77,18 @@ parseSeenMovies = do
 
 printUnseenMovies :: Bool -> DbCall ()
 printUnseenMovies verbose = do
-  movies <- getUnseenMovies
-  extraInfo <- traverseFproduct getExtraInfo movies
-  let formattedMovies = fmap (`F.mkStringMovie` Nothing) movies
-  let formattedParticipations = F.mkFullMovieInfoString . toFullMovieInfo <$> sortOn (Data.Ord.Down . sorter . snd . snd) extraInfo
-  liftIO $ putStrLn $ unlines $ toList $ if verbose then formattedParticipations else formattedMovies where
+  movies <- getMovies
+  let formattedMovies = flip F.mkStringMovie Nothing . F.movie <$> movies
+  let formattedVerbose = F.mkFullMovieInfoString <$> movies
+  liftIO $ putStrLn $ unlines $ toList $ if verbose then formattedVerbose else formattedMovies where
+    -- Returns not-filtered movies, with non-empty participation of followed persons, sorted by score.
+    getMovies :: DbCall (Vector F.FullMovieInfo)
+    getMovies = do
+      notFiltered <- Movie.getAll >>= traverseFilter FilteredMovie.isNotFiltered
+      fullInfo <- fmap toFullMovieInfo <$> traverseFproduct getExtraInfo notFiltered
+      let moviesWithFollowedParticipations = mfilter (notNull . F.participations) fullInfo
+      let sortedByScore = sortOn (Data.Ord.Down . sorter . F.scores) moviesWithFollowedParticipations
+      return sortedByScore
     getFollowedParticipations :: Movie -> DbCall (Vector Participation)
     getFollowedParticipations = Participation.getParticipationsForMovie >=>
         traverseFilter (uncurry FollowedPerson.isFollowed . (Types.participationType &&& Types.person))
