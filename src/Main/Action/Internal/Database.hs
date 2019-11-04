@@ -96,7 +96,7 @@ printUnseenMovies verbose = do
     getExtraInfo = liftUncurry (,) . (getFollowedParticipations &&& runMaybeT . MovieScore.movieScores)
     toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
     sorter :: Maybe MovieScores -> Rational
-    sorter = mapMonoid (toList . _scores) >$> _score .> average .> fromMaybe 0
+    sorter = (mapMonoid (toList . _scores) >$> _score) .> average .> fromMaybe 0
 
 initDatabases :: DbCall ()
 initDatabases = sequence_ [Movie.init, Person.init, Participation.init, FilteredMovie.init, MovieScore.init, FollowedPerson.init, ExternalId.init]
