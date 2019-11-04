@@ -31,7 +31,7 @@ import MovieDB.Types                     (ExternalHost(IMDB), ExternalId(_id), p
 import Database.Persist.Sql              (Entity(..), entityVal, getBy, insert, runMigrationSilent)
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
-import Common.Operators
+import Common.Operators                  ((<*$>), (>$>))
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|

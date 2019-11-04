@@ -26,7 +26,7 @@ import           MovieDB.Types                 (CastAndCrew(..), ImdbId, Movie(.
 import           API                           (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
 
 import           Common.JsonUtils              (ObjectParser)
-import           Common.Operators
+import           Common.Operators              ((<$$>), (>$$>))
 
 
 castAndCrew :: Movie -> ApiCall CastAndCrew

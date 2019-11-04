@@ -32,7 +32,7 @@ import           Text.InterpolatedString.Perl6 (qq)
 import           Text.Read                     (readMaybe)
 
 import qualified Common.Maybes                 as Maybes
-import           Common.Operators
+import           Common.Operators              ((<$$>), (>$$>), (>==>), (|>))
 
 
 -- TODO move to common

@@ -15,7 +15,7 @@ module Common.Transes(
 import Control.Monad.Trans.Class (MonadTrans, lift)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
-import Common.Operators
+import Common.Operators          ((.>), (>$>))
 
 
 class (MonadTrans t, Monad tm) => RunnableMonadTrans t tm where

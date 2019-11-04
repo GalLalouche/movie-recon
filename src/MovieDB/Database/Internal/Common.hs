@@ -22,7 +22,7 @@ import           MovieDB.Database              (DbCall, DbMaybe)
 import           Database.Persist.Sql          (Key, PersistEntity, PersistEntityBackend, SqlBackend, Unique, entityKey, entityVal, get, getBy, insert, selectList)
 
 import           Common.Assertions             (assertMsg)
-import           Common.Operators
+import           Common.Operators              ((<$$>), (<$<))
 
 
 class (PersistEntity row, PersistEntityBackend row ~ SqlBackend) =>

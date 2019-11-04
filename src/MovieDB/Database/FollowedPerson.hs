@@ -29,7 +29,7 @@ import           MovieDB.Types                    (ParticipationType(Actor), Per
 import           Database.Persist.Sql             (entityVal, getBy, insert, runMigrationSilent, selectList)
 import           Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
-import           Common.Operators
+import           Common.Operators                 ((>$>))
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|

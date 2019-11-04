@@ -8,7 +8,7 @@ import           Control.Monad             ((>=>))
 import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 
-import           Common.Operators
+import           Common.Operators          ((.>), (<$<))
 
 
 -- Returns Nothing if the foldable is empty, or Just of a non-empty list

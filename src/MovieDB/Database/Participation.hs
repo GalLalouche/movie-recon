@@ -39,7 +39,7 @@ import           Database.Persist.TH               (mkMigrate, mkPersist, persis
 
 import           Common.Foldables                  (mapHeadOrElse)
 import qualified Common.MaybeTs                    as MaybeTs (fromFoldable)
-import           Common.Operators
+import           Common.Operators                  ((..:), (<*$>), (>$>))
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|

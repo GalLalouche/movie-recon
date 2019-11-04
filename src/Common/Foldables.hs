@@ -5,7 +5,7 @@ import Data.Maybe       (fromJust, maybe)
 import Data.Monoid      (First(..), (<>))
 
 import Common.Maybes    (check)
-import Common.Operators
+import Common.Operators ((>$>))
 
 
 notNull :: Foldable f => f a -> Bool

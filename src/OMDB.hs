@@ -24,7 +24,7 @@ import           OMDB.Internal                 (MovieScore(MovieScore, _score, _
 import           Common.Foldables              (notNull)
 import qualified Common.Maps                   as Maps
 import           Common.Maybes                 (check)
-import           Common.Operators
+import           Common.Operators              ((<$*>))
 import qualified Common.Sets                   as Sets
 
 

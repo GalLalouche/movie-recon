@@ -32,7 +32,7 @@ import           MovieDB.Database.Internal.TypesTH ()
 import           MovieDB.Database.Movie            (MovieRow, MovieRowId, MovieRowable)
 import           MovieDB.Types                     (FilterReason, FilteredMovie(..))
 
-import           Common.Operators
+import           Common.Operators ((<$<), (<*$>))
 
 import           Database.Persist.Sql              (entityVal, getBy, insert, runMigrationSilent, selectList)
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)

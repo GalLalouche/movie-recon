@@ -43,7 +43,7 @@ import qualified OMDB
 
 import           Common.ExceptTs                 (meither, toExcept)
 import           Common.MonadPluses              (traverseFilter)
-import           Common.Operators
+import           Common.Operators                ((.:), (<$$>))
 import qualified Common.Sets                     as Sets (from)
 import qualified Common.Vectors                  as Vectors (from)
 

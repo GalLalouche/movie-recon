@@ -5,7 +5,7 @@ import Data.Either.Combinators    (maybeToRight)
 import Control.Monad.Trans.Except (ExceptT(..), runExceptT)
 import Control.Monad.Trans.Maybe  (MaybeT, runMaybeT)
 
-import Common.Operators
+import Common.Operators           ((>$>))
 import Control.Monad              ((>=>))
 
 

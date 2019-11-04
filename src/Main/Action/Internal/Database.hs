@@ -42,7 +42,7 @@ import           Common.Foldables                (average)
 import           Common.IO                       (getCurrentDate)
 import           Common.Maybes                   (mapMonoid, orError)
 import           Common.MonadPluses              (traverseFilter)
-import           Common.Operators
+import           Common.Operators                ((.>), (>$>))
 import           Common.Traversables             (traverseFproduct)
 import           Common.Vectors                  (sortOn)
 

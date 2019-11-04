@@ -11,7 +11,7 @@ import           Control.Monad ((>=>))
 
 
 (|>) :: a -> (a -> b) -> b
-(|>) = (&)
+(|>) = (&) -- I think |> is more expressive than &
 infixl 1 |>
 
 (|>>) :: a -> (b -> a -> c) -> b -> c

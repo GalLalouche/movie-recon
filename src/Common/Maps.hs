@@ -8,8 +8,8 @@ import           Data.Semigroup   (Semigroup, (<>))
 
 import           Control.Arrow    ((&&&))
 
-import           Common.Operators
 import           Common.Foldables (mapFind)
+import           Common.Operators ((.:), (|>))
 
 
 mapBy :: (Ord k, Foldable f) => (a -> k) -> f a -> Map k a
