@@ -20,7 +20,7 @@ import           Data.Vector               (Vector)
 
 import           Common.JsonUtils          (ObjectParser, int, str, strMaybe, withObjects)
 import           Common.Maybes             (mapIfOrNothing)
-import           Common.MonadPluses        (catMaybes, fmapMaybes)
+import           Common.MonadPluses        (catMaybes, mapMaybe)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
@@ -54,7 +54,7 @@ parseMovieCredits = parseCastAndCrew parsePerson where
 -- release_date is optional for unreleased movies
 data MaybeMovie = MaybeMovie MovieId Text (Maybe Day)
 parsePersonCredits :: ObjectParser (Vector (Movie, ParticipationType))
-parsePersonCredits = fmapMaybes liftMaybe <$> parseCastAndCrew parseMovie where
+parsePersonCredits = mapMaybe liftMaybe <$> parseCastAndCrew parseMovie where
   parseMovie = MaybeMovie <$> getId mkMovieId <*> str "title" <*> getDay
   getDay :: ObjectParser (Maybe Day)
   getDay = runMaybeT $ (MaybeT $ strMaybe "release_date") >>=& mapIfOrNothing notNull (read . unpack)

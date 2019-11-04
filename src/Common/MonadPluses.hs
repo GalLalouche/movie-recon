@@ -10,8 +10,8 @@ import Common.Operators ((.:), (<$$<))
 catMaybes :: MonadPlus m => m (Maybe a) -> m a
 catMaybes = fmap fromJust . mfilter isJust
 
-fmapMaybes :: MonadPlus m => (a -> Maybe b) -> m a -> m b
-fmapMaybes = catMaybes .: fmap
+mapMaybe :: MonadPlus m => (a -> Maybe b) -> m a -> m b
+mapMaybe = catMaybes .: fmap
 
 traverseFilter :: (MonadPlus m, Traversable m, Applicative f) => (a -> f Bool) -> m a -> f (m a)
 traverseFilter = catMaybes <$$< traverse . fcheck
