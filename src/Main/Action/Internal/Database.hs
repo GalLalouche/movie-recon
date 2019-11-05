@@ -24,7 +24,7 @@ import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((&&&), (***))
 import           Control.Monad                   (mfilter, (>=>))
 import           Control.Monad.IO.Class          (liftIO)
-import           Control.Monad.Trans.Maybe       (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Maybe       (runMaybeT)
 
 import           MovieDB.Database                (DbCall)
 import qualified MovieDB.Database.ExternalId     as ExternalId
@@ -34,7 +34,7 @@ import qualified MovieDB.Database.Movie          as Movie
 import qualified MovieDB.Database.MovieScore     as MovieScore
 import qualified MovieDB.Database.Participation  as Participation
 import qualified MovieDB.Database.Person         as Person
-import           MovieDB.Types                   (FilterReason(Ignored, LowScores, Seen), FilteredMovie(..), Movie(..), MovieId, Participation(..), mkMovieId)
+import           MovieDB.Types                   (FilterReason(Ignored, LowScores, Seen), FilteredMovie(FilteredMovie), Movie, MovieId, Participation(Participation), mkMovieId)
 import qualified MovieDB.Types                   as Types
 import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 

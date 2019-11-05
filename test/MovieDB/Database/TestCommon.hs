@@ -9,10 +9,10 @@ module MovieDB.Database.TestCommon (
 import Data.Text               (Text, pack)
 import Data.Time               (fromGregorian)
 
-import MovieDB.Database        (DbCall, DbPath(..), runDbCall)
+import MovieDB.Database        (DbCall, DbPath(DbPath), runDbCall)
 import MovieDB.Database.Movie  as Movie (init)
 import MovieDB.Database.Person as Person (init)
-import MovieDB.Types           (Movie(..), Person(..), mkMovieId, mkPersonId)
+import MovieDB.Types           (Movie(Movie), Person(Person), mkMovieId, mkPersonId)
 
 
 withTempDb :: DbCall a -> IO a

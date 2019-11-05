@@ -3,7 +3,7 @@ module Common.MaybesTest where
 import Data.Char (toUpper)
 
 import Common.Maybes     (check, fcheck, orMempty, mapMonoid)
-import Common.TestCommon (Box(..))
+import Common.TestCommon (Box(Box))
 
 import Test.Tasty
 import Test.Tasty.HUnit

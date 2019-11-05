@@ -22,7 +22,7 @@ import           Data.Aeson                (Array, Object, Result, Value)
 import           Data.Aeson.Types          (FromJSON, Parser)
 import qualified Data.Aeson.Types          as AesonT
 
-import           Data.String               (IsString(..))
+import           Data.String               (IsString(fromString))
 import           Data.Text                 (Text, pack)
 import           Data.Vector               (Vector)
 

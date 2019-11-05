@@ -6,7 +6,7 @@ import qualified Data.Maybe                as Maybe
 
 import           Control.Monad             ((>=>))
 import           Control.Monad.Trans.Class (lift)
-import           Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
 
 import           Common.Operators          ((.>), (<$<))
 

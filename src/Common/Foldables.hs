@@ -2,7 +2,7 @@ module Common.Foldables where
 
 import Data.Foldable    (null, toList)
 import Data.Maybe       (fromJust, maybe)
-import Data.Monoid      (First(..), (<>))
+import Data.Monoid      (First(First, getFirst), (<>))
 
 import Common.Maybes    (check)
 import Common.Operators ((>$>))
@@ -26,7 +26,6 @@ nth i = aux i . toList where
 mapHeadOrElse :: Foldable f => (a -> b) -> b -> f a -> b
 mapHeadOrElse f def = maybe def f . headOpt
 
--- Copy pasted from https://hackage.haskell.org/package/bytestring-tree-builder-0.2.7.3/docs/src/ByteString.TreeBuilder.html#intercalate
 intercalate :: (Foldable f, Monoid m) => m -> f m -> m
 intercalate incut = aux . toList where
   aux []       = mempty

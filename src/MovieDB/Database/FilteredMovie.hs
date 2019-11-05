@@ -29,7 +29,7 @@ import           MovieDB.Database                  (DbCall)
 import           MovieDB.Database.Internal.Common  (ToKey(..), getValueByRowId, runInit)
 import           MovieDB.Database.Internal.TypesTH ()
 import           MovieDB.Database.Movie            (MovieRow, MovieRowId, MovieRowable)
-import           MovieDB.Types                     (FilterReason, FilteredMovie(..))
+import           MovieDB.Types                     (FilterReason, FilteredMovie(FilteredMovie, _movie, _reason))
 
 import           Common.Operators ((<$<), (<*$>))
 

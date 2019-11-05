@@ -5,7 +5,7 @@ module MovieDB.Database.ExternalIdTest where
 import           Data.Time                   (fromGregorian)
 import           Prelude                     hiding (init)
 
-import           MovieDB.Types               (ExternalHost(IMDB), Movie(..), mkImdbId, mkMovieId, toExternalId)
+import           MovieDB.Types               (ExternalHost(IMDB), Movie(Movie), mkImdbId, mkMovieId, toExternalId)
 
 import           MovieDB.Database            (Nullable(NoRow, NotNull, Null))
 import qualified MovieDB.Database.ExternalId as EI

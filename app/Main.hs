@@ -2,7 +2,7 @@
 
 import           Control.Monad.Trans.Reader (runReaderT)
 
-import           MovieDB.Database           (DbCall, DbPath(..), runDbCall)
+import           MovieDB.Database           (DbCall, DbPath(DbPath), runDbCall)
 
 import           GHC.IO.Encoding            (setLocaleEncoding, utf8)
 

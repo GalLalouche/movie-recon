@@ -13,7 +13,7 @@ module Common.Transes(
 ) where
 
 import Control.Monad.Trans.Class (MonadTrans, lift)
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
 
 import Common.Operators          ((.>), (>$>))
 

@@ -4,7 +4,7 @@ module MovieDB.Database.MovieTest where
 
 import           MovieDB.Database.Internal.Common (insertOrVerify)
 import qualified MovieDB.Database.Movie           as DB
-import           MovieDB.Types                    (Movie(..), mkMovieId)
+import           MovieDB.Types                    (Movie(Movie), mkMovieId)
 
 import           Control.Monad.Trans.Maybe        (runMaybeT)
 import           Data.Time                        (fromGregorian)

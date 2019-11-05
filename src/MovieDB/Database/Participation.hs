@@ -24,14 +24,14 @@ import           Data.Vector                       (Vector, elem)
 import qualified Data.Vector                       as Vector (fromList)
 
 import           Control.Monad.Trans.Class         (lift)
-import           Control.Monad.Trans.Maybe         (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Maybe         (MaybeT(MaybeT), runMaybeT)
 
 import           MovieDB.Database                  (DbCall, DbMaybe)
 import           MovieDB.Database.Internal.Common  (getKeyFor, getValueByRowId, insertOrVerify, runInit)
 import           MovieDB.Database.Internal.TypesTH ()
 import           MovieDB.Database.Movie            (MovieRowId, MovieRowable)
 import           MovieDB.Database.Person           (PersonRowId, PersonRowable)
-import           MovieDB.Types                     (CastAndCrew, Movie, Participation(..), ParticipationType, Person, toCastAndCrew)
+import           MovieDB.Types                     (CastAndCrew, Movie, Participation(Participation, person), ParticipationType, Person, toCastAndCrew)
 
 import           Database.Persist.Sql              (entityKey, entityVal, getBy, insert, selectList, (==.))
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)

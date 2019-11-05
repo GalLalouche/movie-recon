@@ -27,7 +27,7 @@ import MovieDB.Database.Internal.TypesTH ()
 import MovieDB.Database.Movie            (MovieRowId)
 import MovieDB.Types                     (ExternalHost(IMDB), ExternalId(_id), pattern ExternalId, ImdbId, IsExternalId, Movie, mkImdbId, toExternalId)
 
-import Database.Persist.Sql              (Entity(..), entityVal, getBy, insert)
+import Database.Persist.Sql              (entityVal, getBy, insert)
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import Common.Operators                  ((<*$>), (>$>))

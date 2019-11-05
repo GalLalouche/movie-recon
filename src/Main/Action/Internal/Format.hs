@@ -15,9 +15,9 @@ import           Data.Text                     (Text, unlines)
 import           Data.Vector                   (Vector)
 import           Text.InterpolatedString.Perl6 (qq)
 
-import           MovieDB.Types                 (Movie(..), pattern MovieId, Participation(..), ParticipationType(Actor), Person)
+import           MovieDB.Types                 (Movie(Movie), pattern MovieId, Participation(Participation), ParticipationType(Actor), Person)
 import qualified MovieDB.Types                 as Types
-import           OMDB                          (MovieScore(..), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
+import           OMDB                          (MovieScore(MovieScore), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
 import qualified OMDB
 
 import           Common.Foldables              (intercalate)

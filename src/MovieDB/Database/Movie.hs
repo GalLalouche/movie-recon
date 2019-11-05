@@ -25,8 +25,8 @@ import Data.Time                        (Day)
 import Control.Lens                     (classUnderscoreNoPrefixFields, makeLensesWith, (^.))
 
 import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (RowIso(..), ToKey(..), getAll, getValue, runInit)
-import MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
+import MovieDB.Database.Internal.Common (RowIso(..), ToKey, getAll, getValue, runInit)
+import MovieDB.Types                    (Movie(Movie), MovieId, mkMovieId)
 
 import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 

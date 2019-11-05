@@ -6,7 +6,7 @@ module Main.Config(Config(..), parseConfig) where
 
 import Data.Text              (Text)
 
-import System.Console.CmdArgs (Data, Default(..), Typeable, argPos, cmdArgs, def, help, modes, name, typ, (&=))
+import System.Console.CmdArgs (Data, Default(def), Typeable, argPos, cmdArgs, def, help, modes, name, typ, (&=))
 
 
 instance Default Text where def = ""

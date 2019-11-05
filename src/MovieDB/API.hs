@@ -18,12 +18,12 @@ import           Data.Vector                   (Vector)
 import           Text.InterpolatedString.Perl6 (qq)
 
 import           Control.Monad.IO.Class        (liftIO)
-import           Control.Monad.Trans.Maybe     (MaybeT(..))
+import           Control.Monad.Trans.Maybe     (MaybeT(MaybeT))
 
 import qualified MovieDB.API.Internal          as I
-import           MovieDB.Types                 (CastAndCrew(..), ImdbId, Movie(..), Participation(..), ParticipationType, Person(..), pattern PersonId, deepId, toCastAndCrew)
+import           MovieDB.Types                 (CastAndCrew(CastAndCrew), ImdbId, Movie(Movie), Participation(Participation), ParticipationType, Person(Person), pattern PersonId, deepId, toCastAndCrew)
 
-import           API                           (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
+import           API                           (ApiCall, ApiMaybe, Url(Url), parseRemoteJson, readKey)
 
 import           Common.JsonUtils              (ObjectParser)
 import           Common.Operators              ((<$$>), (>$$>))
@@ -50,7 +50,7 @@ runQuery :: Text -> ObjectParser r -> ApiCall r
 runQuery query parser = do
   key <- readKey "moviedb"
   let request = Url [qq|http://api.themoviedb.org/3/$query?api_key=$key&language=en-US|]
-  liftIO $ parseRemoteJson request parser
+  parseRemoteJson request parser
 
 getParticipations ::
     (b -> ParticipationType -> Participation)

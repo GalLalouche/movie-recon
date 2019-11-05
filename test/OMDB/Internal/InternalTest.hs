@@ -1,6 +1,6 @@
 module OMDB.Internal.InternalTest where
 
-import OMDB.Internal        (MovieScore(..), Source(IMDB, Metacritic, RottenTomatoes), parse)
+import OMDB.Internal        (MovieScore(MovieScore), Source(IMDB, Metacritic, RottenTomatoes), parse)
 
 import Common.JsonTestUtils (parseJson)
 import Common.TestCommon    ((*?=))

@@ -24,11 +24,11 @@ import           Text.InterpolatedString.Perl6   (qq)
 import           Control.Monad                   (unless, (>=>))
 import           Control.Monad.IO.Class          (liftIO)
 import           Control.Monad.Trans.Class       (lift)
-import           Control.Monad.Trans.Except      (ExceptT(..), mapExceptT)
-import           Control.Monad.Trans.Maybe       (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Except      (ExceptT(ExceptT), mapExceptT)
+import           Control.Monad.Trans.Maybe       (MaybeT(MaybeT), runMaybeT)
 import           Data.Functor                    (void)
 
-import           API                             (Url(..))
+import           API                             (Url(Url))
 import qualified MovieDB.API                     as API
 import           MovieDB.Database                (toMaybeMaybe, withDbPath)
 import qualified MovieDB.Database.ExternalId     as ExternalId
@@ -36,7 +36,7 @@ import qualified MovieDB.Database.FilteredMovie  as FilteredMovie
 import qualified MovieDB.Database.FollowedPerson as FollowedPerson
 import qualified MovieDB.Database.Movie          as Movie
 import qualified MovieDB.Database.MovieScore     as MovieScore
-import           MovieDB.Types                   (ImdbId, Movie(..), Participation(movie))
+import           MovieDB.Types                   (ImdbId, Movie(Movie), Participation(movie))
 import qualified MovieDB.Types                   as Types (ExternalHost(IMDB))
 import           OMDB                            (MovieScores)
 import qualified OMDB

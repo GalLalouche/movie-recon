@@ -5,7 +5,7 @@ module Common.TestCommon where
 import Data.Foldable     (toList)
 import Data.List         (sort)
 
-import Control.Exception (SomeException(..), catch, try)
+import Control.Exception (SomeException(SomeException), catch, try)
 
 import Test.Tasty.HUnit  ((@?), (@?=))
 

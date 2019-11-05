@@ -24,13 +24,13 @@ import           Data.Vector                       (Vector)
 import qualified Data.Vector                       as Vector (fromList)
 
 import           Control.Arrow                     ((&&&))
-import           Control.Monad.Trans.Maybe         (MaybeT(..))
+import           Control.Monad.Trans.Maybe         (MaybeT(MaybeT))
 
 import           MovieDB.Database                  (DbCall, DbMaybe)
 import           MovieDB.Database.Internal.Common  (getKeyFor, getValueByRowId, runInit)
 import           MovieDB.Database.Internal.TypesTH ()
 import           MovieDB.Database.Movie            (MovieRowId, MovieRowable)
-import           OMDB                              (MovieScore(..), MovieScores(..), Source)
+import           OMDB                              (MovieScore(MovieScore), MovieScores(MovieScores, _movie, _scores), Source)
 
 import           Database.Persist.Sql              (entityVal, insert, selectList, (==.))
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)

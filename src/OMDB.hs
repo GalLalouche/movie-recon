@@ -14,12 +14,12 @@ import           Data.Map.Strict               (Map)
 import           Data.Set                      (Set)
 import           Text.InterpolatedString.Perl6 (qq)
 
-import           Control.Monad.Trans.Maybe     (MaybeT(..))
+import           Control.Monad.Trans.Maybe     (MaybeT(MaybeT))
 
-import           API                           (ApiCall, ApiMaybe, Url(..), parseRemoteJson, readKey)
+import           API                           (ApiCall, ApiMaybe, Url(Url), parseRemoteJson, readKey)
 import           MovieDB.Types                 (ImdbId, pattern ImdbId, Movie)
 
-import           OMDB.Internal                 (MovieScore(MovieScore, _score, _source), Source(..), parse)
+import           OMDB.Internal                 (MovieScore(..), Source(..), parse)
 
 import           Common.Foldables              (notNull)
 import qualified Common.Maps                   as Maps

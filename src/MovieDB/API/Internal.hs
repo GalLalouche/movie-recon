@@ -10,7 +10,7 @@ module MovieDB.API.Internal(
 ) where
 
 import           Control.Monad             (mfilter)
-import           Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
 
 import           Data.Semigroup            ((<>))
 import           Data.Text                 (Text, pack, splitOn, unpack)
@@ -24,8 +24,8 @@ import           Common.MonadPluses        (catMaybes, mapMaybe)
 import           Common.Operators
 import           Common.Transes            ((>>=&), (>>=^))
 
-import           API                      (Url(..))
-import           MovieDB.Types             (ImdbId, Movie(..), MovieId, ParticipationType(..), Person(..), PersonId, mkImdbId, mkMovieId, mkPersonId)
+import           API                       (Url(Url))
+import           MovieDB.Types             (ImdbId, Movie(Movie), MovieId, ParticipationType(Actor, Director, Writer), Person(Person), PersonId, mkImdbId, mkMovieId, mkPersonId)
 
 
 getId :: (Text -> a) -> ObjectParser a

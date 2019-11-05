@@ -1,7 +1,7 @@
 module Common.MaybeTsTest where
 
 import Common.MaybeTs            (fromFoldable)
-import Common.TestCommon         (Box(..))
+import Common.TestCommon         (Box(Box))
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.List.NonEmpty        (NonEmpty((:|)))
 

@@ -7,8 +7,8 @@ import           Control.Monad.Trans.Maybe   (runMaybeT)
 import qualified Data.Set                    as Set (fromList)
 import           Data.Time                   (fromGregorian)
 
-import           MovieDB.Types               (Movie(..), mkMovieId)
-import           OMDB                        (MovieScore(..), MovieScores(..), Source(IMDB, Metacritic, RottenTomatoes))
+import           MovieDB.Types               (Movie(Movie), mkMovieId)
+import           OMDB                        (MovieScore(MovieScore), MovieScores(MovieScores, _scores), Source(IMDB, Metacritic, RottenTomatoes))
 
 import qualified MovieDB.Database.MovieScore as DB
 

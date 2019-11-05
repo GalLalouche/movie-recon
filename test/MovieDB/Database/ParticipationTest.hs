@@ -4,7 +4,7 @@ module MovieDB.Database.ParticipationTest where
 
 import           MovieDB.Database.Movie         ()
 import qualified MovieDB.Database.Participation as DB
-import           MovieDB.Types                  (CastAndCrew(actors, directors, writers), Participation(..), ParticipationType(Actor, Director, Writer))
+import           MovieDB.Types                  (CastAndCrew(actors, directors, writers), Participation(Participation), ParticipationType(Actor, Director, Writer))
 
 import           Common.MaybeTs                 (fromJust)
 

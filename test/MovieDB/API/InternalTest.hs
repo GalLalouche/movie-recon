@@ -3,9 +3,9 @@
 
 module MovieDB.API.InternalTest where
 
-import           API                  (Url(..))
+import           API                  (Url(Url))
 import qualified MovieDB.API.Internal as I
-import           MovieDB.Types        (pattern ImdbId, Movie(..), ParticipationType(Actor, Director, Writer), Person(..), mkMovieId, mkPersonId)
+import           MovieDB.Types        (pattern ImdbId, Movie(Movie), ParticipationType(Actor, Director, Writer), Person(Person), mkMovieId, mkPersonId)
 
 import           Data.Text            (pack)
 import           Data.Time            (fromGregorian)

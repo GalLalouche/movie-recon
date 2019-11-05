@@ -22,7 +22,7 @@ import Control.Lens                     (classUnderscoreNoPrefixFields, makeLens
 
 import MovieDB.Database                 (DbCall)
 import MovieDB.Database.Internal.Common (RowIso(..), ToKey, runInit)
-import MovieDB.Types                    (Person(..), PersonId, mkPersonId)
+import MovieDB.Types                    (Person(Person), PersonId, mkPersonId)
 
 import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 

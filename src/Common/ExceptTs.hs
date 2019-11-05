@@ -2,7 +2,7 @@ module Common.ExceptTs where
 
 import Data.Either.Combinators    (maybeToRight)
 
-import Control.Monad.Trans.Except (ExceptT(..), runExceptT)
+import Control.Monad.Trans.Except (ExceptT(ExceptT), runExceptT)
 import Control.Monad.Trans.Maybe  (MaybeT, runMaybeT)
 
 import Common.Operators           ((>$>))

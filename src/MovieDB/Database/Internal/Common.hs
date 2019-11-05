@@ -15,7 +15,7 @@ import qualified Data.Vector                   as Vector (fromList)
 import           Text.InterpolatedString.Perl6 (qq)
 
 import           Control.Arrow                 ((&&&))
-import           Control.Monad.Trans.Maybe     (MaybeT(..), runMaybeT)
+import           Control.Monad.Trans.Maybe     (MaybeT(MaybeT), runMaybeT)
 import           Data.Functor                  (void)
 
 import           MovieDB.Database              (DbCall, DbMaybe)
