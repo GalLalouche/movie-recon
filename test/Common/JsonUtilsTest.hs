@@ -4,16 +4,16 @@
 
 module Common.JsonUtilsTest where
 
-import           Common.JsonUtils  ((\\), (\>))
+import           Common.JsonUtils  ((\>), (\\))
 import qualified Common.JsonUtils  as JU
 import           Common.TestCommon (assertThrows)
 
-import           Data.Aeson.Types  (Value(Number), (.:))
+import           Data.Aeson.Types  (Value(Number))
 import           Data.Text         (Text)
 import           Data.Time         (fromGregorian)
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty        (testGroup)
+import           Test.Tasty.HUnit  (testCase, (@?=))
 import           Text.RawString.QQ (r)
 
 

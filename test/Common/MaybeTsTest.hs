@@ -5,8 +5,8 @@ import Common.TestCommon         (Box(Box))
 import Control.Monad.Trans.Maybe (runMaybeT)
 import Data.List.NonEmpty        (NonEmpty((:|)))
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty                (testGroup)
+import Test.Tasty.HUnit          (testCase, (@?=))
 
 
 test_all = testGroup "MaybeTUtils" [

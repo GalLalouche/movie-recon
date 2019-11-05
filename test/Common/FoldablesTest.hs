@@ -2,8 +2,8 @@ module Common.FoldablesTest where
 
 import qualified Common.Foldables as F
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty       (testGroup)
+import           Test.Tasty.HUnit (testCase, (@?=))
 
 
 test_all = testGroup "Foldables" [

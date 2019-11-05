@@ -18,8 +18,8 @@ test_Movie = [
       let id = mkMovieId "42"
       let movie = Movie id "moobar" (fromGregorian 2000 1 1)
       res <- withTempDb $ do
-        DB.init
-        insertOrVerify movie
+        _ <- DB.init
+        _ <- insertOrVerify movie
         runMaybeT $ DB.getValue id
       res @?= Just movie
   ]

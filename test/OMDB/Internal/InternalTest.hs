@@ -4,8 +4,7 @@ import OMDB.Internal        (MovieScore(MovieScore), Source(IMDB, Metacritic, Ro
 
 import Common.JsonTestUtils (parseJson)
 import Common.TestCommon    ((*?=))
-import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit     (testCase)
 
 
 test_OMDB_parsing = [

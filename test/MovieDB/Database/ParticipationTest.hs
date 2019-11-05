@@ -24,12 +24,12 @@ test_Participation = [
       let movie1 = makeMovie "movie1" 6
       let movie2 = makeMovie "movie2" 7
       res <- withTempDb $ do
-        DB.init
-        DB.addValueEntry $ Participation director movie1 Director
-        DB.addValueEntry $ Participation writer movie2 Writer
-        DB.addValueEntry $ Participation actor1 movie1 Actor
-        DB.addValueEntry $ Participation actor2 movie2 Actor
-        DB.addValueEntry $ Participation actor3 movie1 Actor
+        _ <- DB.init
+        _ <- DB.addValueEntry $ Participation director movie1 Director
+        _ <- DB.addValueEntry $ Participation writer movie2 Writer
+        _ <- DB.addValueEntry $ Participation actor1 movie1 Actor
+        _ <- DB.addValueEntry $ Participation actor2 movie2 Actor
+        _ <- DB.addValueEntry $ Participation actor3 movie1 Actor
         fromJust $ DB.castAndCrew movie1
       directors res *?= [director]
       writers res *?= []

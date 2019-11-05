@@ -11,8 +11,7 @@ import           MovieDB.Database            (Nullable(NoRow, NotNull, Null))
 import qualified MovieDB.Database.ExternalId as EI
 
 import           MovieDB.Database.TestCommon (withTempDb)
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty.HUnit            (testCase, (@=?))
 
 
 movie1 = Movie (mkMovieId "42") "foobar" (fromGregorian 2000 1 1)

@@ -1,12 +1,10 @@
 module Common.MaybesTest where
 
-import Data.Char (toUpper)
-
-import Common.Maybes     (check, fcheck, orMempty, mapMonoid)
+import Common.Maybes     (check, fcheck, mapMonoid, orMempty)
 import Common.TestCommon (Box(Box))
 
-import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty        (testGroup)
+import Test.Tasty.HUnit  (testCase, (@?=))
 
 
 test_all = testGroup "Maybes"  [

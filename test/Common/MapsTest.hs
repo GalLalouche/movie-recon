@@ -3,8 +3,8 @@ module Common.MapsTest where
 import qualified Common.Maps      as Maps
 import qualified Data.Map.Strict  as Map
 
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty       (testGroup)
+import           Test.Tasty.HUnit (testCase, (@?=))
 
 
 test_Maps = [

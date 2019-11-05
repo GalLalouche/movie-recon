@@ -12,8 +12,8 @@ import           Data.Time            (fromGregorian)
 
 import           Common.JsonTestUtils (parseJson)
 import           Common.TestCommon    ((*?=))
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import           Test.Tasty           (testGroup)
+import           Test.Tasty.HUnit     (testCase, (@?=), (@=?))
 
 
 test_MovieDB_Internal = [
