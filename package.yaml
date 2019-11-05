@@ -57,6 +57,10 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
+    - -Wno-missing-signatures
+    - -Wno-name-shadowing
+    - -Wno-orphans
     dependencies:
     - movie-recon
 
@@ -68,6 +72,11 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
+    - -Wno-missing-signatures
+    - -Wno-name-shadowing
+    - -Wno-orphans
+    - -Wno-type-defaults
     dependencies:
     - movie-recon
     - HUnit
