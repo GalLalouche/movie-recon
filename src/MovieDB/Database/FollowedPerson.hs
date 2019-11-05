@@ -19,14 +19,13 @@ import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as Vector (fromList)
 
 import           Control.Monad                    ((>=>))
-import           Data.Functor                     (void)
 
 import           MovieDB.Database                 (DbCall)
-import           MovieDB.Database.Internal.Common (getKeyFor, getValueByRowId)
+import           MovieDB.Database.Internal.Common (getKeyFor, getValueByRowId, runInit)
 import           MovieDB.Database.Person          (PersonRowId, PersonRowable)
 import           MovieDB.Types                    (ParticipationType(Actor), Person)
 
-import           Database.Persist.Sql             (entityVal, getBy, insert, runMigrationSilent, selectList)
+import           Database.Persist.Sql             (entityVal, getBy, insert, selectList)
 import           Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import           Common.Operators                 ((>$>))
@@ -40,7 +39,7 @@ FollowedPerson
 |]
 
 init :: DbCall ()
-init = void $ runMigrationSilent migrateTables
+init = runInit migrateTables
 
 
 addFollowedPerson :: PersonRowable p => Bool -> p -> DbCall FollowedPersonId

@@ -20,15 +20,14 @@ import Data.Text                         (Text)
 import Prelude                           hiding (id, init)
 
 import Control.Monad                     ((>=>))
-import Data.Functor                      (void)
 
 import MovieDB.Database                  (DbCall, Nullable, fromMaybeMaybe)
-import MovieDB.Database.Internal.Common  (getKeyFor)
+import MovieDB.Database.Internal.Common  (getKeyFor, runInit)
 import MovieDB.Database.Internal.TypesTH ()
 import MovieDB.Database.Movie            (MovieRowId)
 import MovieDB.Types                     (ExternalHost(IMDB), ExternalId(_id), pattern ExternalId, ImdbId, IsExternalId, Movie, mkImdbId, toExternalId)
 
-import Database.Persist.Sql              (Entity(..), entityVal, getBy, insert, runMigrationSilent)
+import Database.Persist.Sql              (Entity(..), entityVal, getBy, insert)
 import Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 import Common.Operators                  ((<*$>), (>$>))
@@ -43,7 +42,7 @@ ExternalIdRow sql=external_id
 |]
 
 init :: DbCall ()
-init = void $ runMigrationSilent migrateTables
+init = runInit migrateTables
 
 
 addExternalId :: ExternalId -> DbCall ExternalIdRowId

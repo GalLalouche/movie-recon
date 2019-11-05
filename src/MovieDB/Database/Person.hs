@@ -19,13 +19,11 @@ import Prelude                          hiding (id, init)
 import Data.Text                        (Text)
 
 import Control.Lens                     (classUnderscoreNoPrefixFields, makeLensesWith, (^.))
-import Data.Functor                     (void)
 
 import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (RowIso(..), ToKey)
+import MovieDB.Database.Internal.Common (RowIso(..), ToKey, runInit)
 import MovieDB.Types                    (Person(..), PersonId, mkPersonId)
 
-import Database.Persist.Sql             (runMigrationSilent)
 import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
@@ -37,7 +35,7 @@ PersonRow sql=person
 |]
 
 init :: DbCall ()
-init = void $ runMigrationSilent migrateTables
+init = runInit migrateTables
 
 
 makeLensesWith classUnderscoreNoPrefixFields ''PersonId

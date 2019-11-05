@@ -23,13 +23,11 @@ import Data.Text                        (Text)
 import Data.Time                        (Day)
 
 import Control.Lens                     (classUnderscoreNoPrefixFields, makeLensesWith, (^.))
-import Data.Functor                     (void)
 
 import MovieDB.Database                 (DbCall)
-import MovieDB.Database.Internal.Common (RowIso(..), ToKey(..), getAll, getValue, insertOrVerify)
+import MovieDB.Database.Internal.Common (RowIso(..), ToKey(..), getAll, getValue, runInit)
 import MovieDB.Types                    (Movie(..), MovieId, mkMovieId)
 
-import Database.Persist.Sql             (runMigrationSilent)
 import Database.Persist.TH              (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
 
 
@@ -51,6 +49,6 @@ instance RowIso Movie MovieId MovieRow where
   rowToEntity (MovieRow id name date) = Movie (mkMovieId id) name date
 
 init :: DbCall ()
-init = void $ runMigrationSilent migrateTables
+init = runInit migrateTables
 
 type MovieRowable m = ToKey m MovieRow

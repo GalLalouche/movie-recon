@@ -16,14 +16,18 @@ import           Text.InterpolatedString.Perl6 (qq)
 
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Trans.Maybe     (MaybeT(..), runMaybeT)
+import           Data.Functor                  (void)
 
 import           MovieDB.Database              (DbCall, DbMaybe)
 
-import           Database.Persist.Sql          (Key, PersistEntity, PersistEntityBackend, SqlBackend, Unique, entityKey, entityVal, get, getBy, insert, selectList)
+import           Database.Persist.Sql          (Key, Migration, PersistEntity, PersistEntityBackend, SqlBackend, Unique, entityKey, entityVal, get, getBy, insert, runMigrationSilent, selectList)
 
 import           Common.Assertions             (assertMsg)
 import           Common.Operators              ((<$$>), (<$<))
 
+
+runInit :: Migration -> DbCall ()
+runInit = void . runMigrationSilent
 
 class (PersistEntity row, PersistEntityBackend row ~ SqlBackend) =>
     RowIso entity entityId row
