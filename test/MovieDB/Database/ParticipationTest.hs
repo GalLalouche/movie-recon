@@ -20,7 +20,7 @@ test_Participation = [
       let actor2 = makePerson "actor2" 2
       let actor3 = makePerson "actor3" 3
       let director = makePerson "director" 4
-      let writer = makePerson "director" 5
+      let writer = makePerson "writer" 5
       let movie1 = makeMovie "movie1" 6
       let movie2 = makeMovie "movie2" 7
       res <- withTempDb $ do

@@ -37,10 +37,10 @@ mkStringMovie (Movie (MovieId id) name date) ms = let
       in [qq|$score $shortSource|]
   in [qq|$id$tab$name$tab$date$tab$scoreString|]
 
-data FullMovieInfo = FullMovieInfo 
-  { movie :: Movie
+data FullMovieInfo = FullMovieInfo
+  { movie          :: Movie
   , participations :: Vector Participation
-  , scores :: Maybe MovieScores
+  , scores         :: Maybe MovieScores
   }
 
 mkFullMovieInfoString :: FullMovieInfo -> Text
