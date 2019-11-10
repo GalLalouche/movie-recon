@@ -8,7 +8,6 @@
 
 module MovieDB.Database.Participation(
   init,
-  addEntry,
   addValueEntry,
   hasParticipated,
   getParticipationsForMovie,
@@ -24,6 +23,7 @@ import qualified Data.Vector                       as Vector (fromList)
 
 import           Control.Monad.Trans.Class         (lift)
 import           Control.Monad.Trans.Maybe         (MaybeT(MaybeT), runMaybeT)
+import           Control.Monad (join)
 
 import           MovieDB.Database                  (DbCall, DbMaybe)
 import           MovieDB.Database.Internal.Common  (getKeyFor, getValueByRowId, insertOrVerify, runInit)
@@ -55,16 +55,13 @@ init = runInit migrateTables
 getEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbMaybe ParticipationRowId
 getEntry = fmap entityKey . MaybeT . getBy ..: ParticipationUniqueness
 
-addEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbCall ParticipationRowId
-addEntry p m pt = do
-  existingId <- runMaybeT $ getEntry p m pt
-  mapHeadOrElse return (insert $ ParticipationRow p m pt) existingId
-
 addValueEntry :: Participation -> DbCall ParticipationRowId
-addValueEntry (Participation person movie pt) = do
-  pri <- insertOrVerify person
-  mri <- insertOrVerify movie
-  addEntry pri mri pt
+addValueEntry (Participation person movie pt) =
+  join $ addEntry <$> insertOrVerify person <*> insertOrVerify movie <*$> pt where
+  addEntry :: PersonRowId -> MovieRowId -> ParticipationType -> DbCall ParticipationRowId
+  addEntry p m pt = do
+    existingValue <- runMaybeT $ getEntry p m pt
+    mapHeadOrElse return (insert $ ParticipationRow p m pt) existingValue
 
 toParticipation :: ParticipationRow -> DbCall Participation
 toParticipation (ParticipationRow pid mid pt) =
@@ -87,9 +84,8 @@ castAndCrew m = do
   mid <- lift $ getKeyFor m
   toCastAndCrew <$> MaybeTs.fromFoldable (getParticipationsForMovie mid)
 
-data EntryResult = Participated | DidNotParticipate | Unknown
-  deriving (Show, Eq, Ord)
--- Returns Unknown the movie has no participations at all.
+data EntryResult = Participated | DidNotParticipate | Unknown deriving (Show, Eq, Ord)
+-- Returns Unknown if the movie has no participations at all.
 hasParticipated :: Person -> Movie -> DbCall EntryResult
 hasParticipated p = getParticipationsForMovie >$> aux . fmap person where
   aux crew | null crew = Unknown | p `elem` crew = Participated | otherwise = DidNotParticipate

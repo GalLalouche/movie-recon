@@ -3,6 +3,7 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
@@ -31,10 +32,11 @@ import           MovieDB.Database.Internal.TypesTH ()
 import           MovieDB.Database.Movie            (MovieRow, MovieRowId, MovieRowable)
 import           MovieDB.Types                     (FilterReason, FilteredMovie(FilteredMovie, _movie, _reason))
 
-import           Common.Operators ((<$<), (<*$>))
-
 import           Database.Persist.Sql              (entityVal, getBy, insert, selectList)
 import           Database.Persist.TH               (mkMigrate, mkPersist, persistLowerCase, share, sqlSettings)
+
+import           Common.Arrows                     (uncurryA2)
+import           Common.Operators                  ((<$<), (<*$>))
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -54,7 +56,7 @@ instance {-# OVERLAPPING #-} ToKey FilteredMovie MovieRow where
 addFilteredMovie :: FilteredMovie -> DbCall FilteredMovieRowId
 addFilteredMovie = toRow >=> insert where
   toRow :: FilteredMovie -> DbCall FilteredMovieRow
-  toRow fm = FilteredMovieRow <$> getKeyFor fm <*$> _reason fm
+  toRow = uncurryA2 FilteredMovieRow getKeyFor (return . _reason)
 
 isFiltered :: MovieRowable m => m -> DbCall Bool
 isFiltered = getKeyFor >=> fmap isJust . getBy . UniqueMovieId
@@ -66,6 +68,6 @@ allFilteredMovies :: DbCall (Vector FilteredMovie)
 allFilteredMovies = do
   rows <- fmap entityVal <$> selectList [] []
   let ids = map filteredMovieRowMovieId rows
-  let reasons = map filteredMovieRowReason rows
   movies <- traverse getValueByRowId ids
+  let reasons = map filteredMovieRowReason rows
   return $ Vector.fromList $ zipWith FilteredMovie movies reasons

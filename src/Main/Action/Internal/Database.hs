@@ -37,6 +37,8 @@ import           MovieDB.Types                   (FilterReason(Ignored, LowScore
 import qualified MovieDB.Types                   as Types (isReleased)
 import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 
+import           Common.Applicatives             (uncurryLift2)
+import           Common.Arrows                   (uncurryA2)
 import           Common.Foldables                (average, notNull)
 import           Common.IO                       (getCurrentDate)
 import           Common.Maybes                   (mapMonoid, orError)
@@ -63,7 +65,6 @@ parseSeenMovieLine line = let
     reason | r == 'S' = Seen | r == 'I' = Ignored | r == 'L' = LowScores | otherwise = error [qq|Unsupported prefix <$r>|]
   in (mkMovieId $ pack id, reason)
 
-liftUncurry = uncurry . liftA2
 
 parseSeenMovies :: DbCall ()
 parseSeenMovies = do
@@ -72,7 +73,7 @@ parseSeenMovies = do
   traverse_ FilteredMovie.addFilteredMovie movies
   where
     parse :: Text -> DbCall FilteredMovie
-    parse = liftUncurry FilteredMovie . (getMovie *** return) . parseSeenMovieLine
+    parse = uncurryLift2 FilteredMovie . (getMovie *** return) . parseSeenMovieLine
     getMovie mid = orError [qq|Could not find movie with ID <$mid>|] <$> runMaybeT (Movie.getValue mid)
 
 printUnseenMovies :: Bool -> DbCall ()
@@ -93,7 +94,7 @@ printUnseenMovies verbose = do
     getFollowedParticipations = Participation.getParticipationsForMovie >=>
         traverseFilter (uncurry FollowedPerson.isFollowed . (participationType &&& person))
     getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
-    getExtraInfo = liftUncurry (,) . (getFollowedParticipations &&& runMaybeT . MovieScore.movieScores)
+    getExtraInfo = uncurryA2 (,) getFollowedParticipations (runMaybeT . MovieScore.movieScores)
     toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
     sorter :: Maybe MovieScores -> Rational
     sorter = (mapMonoid _scores Sets.>$> _score) .> average .> fromMaybe 0
