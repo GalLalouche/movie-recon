@@ -11,6 +11,7 @@ module Main.Action.Internal.Format(
 import           Prelude                       hiding (unlines)
 
 import           Data.Foldable                 (toList)
+import qualified Data.Set                      as Set (map)
 import           Data.Text                     (Text, unlines)
 import           Data.Vector                   (Vector)
 import           Text.InterpolatedString.Perl6 (qq)
@@ -27,8 +28,8 @@ tab = "\t"
 
 mkStringMovie :: Movie -> Maybe MovieScores -> Text
 mkStringMovie (Movie (MovieId id) name date) ms = let
-    scoreString = maybe "No score" (toString . toList . OMDB._scores) ms
-    toString ms = [qq|({intercalate ", " $ fmap aux ms})|]
+    scoreString = maybe "No score" (toString . OMDB._scores) ms
+    toString ms = [qq|({intercalate ", " $ Set.map aux ms})|]
     aux (MovieScore source score) = let
         shortSource = case source of
           IMDB           -> "IMDB"

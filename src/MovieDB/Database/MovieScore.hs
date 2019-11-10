@@ -17,7 +17,7 @@ module MovieDB.Database.MovieScore(
 
 import           Prelude                           hiding (init)
 
-import           Data.Foldable                     (toList, traverse_)
+import           Data.Foldable                     (traverse_)
 import qualified Data.Map.Strict                   as Map (assocs)
 import qualified Data.Set                          as Set (fromList)
 import           Data.Vector                       (Vector)
@@ -37,6 +37,7 @@ import           Database.Persist.TH               (mkMigrate, mkPersist, persis
 
 import qualified Common.Maps                       as Maps
 import           Common.MaybeTs                    (isJust)
+import qualified Common.Sets                       as Sets
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
@@ -54,7 +55,7 @@ init = runInit migrateTables
 addMovieScores :: MovieScores -> DbCall ()
 addMovieScores (MovieScores m ss) = do
   mid <- getKeyFor m
-  let scores = (mid, ) <$> toList ss
+  let scores = (mid, ) Sets.<$> ss
   traverse_ (uncurry addMovieScore) scores where
     addMovieScore :: MovieRowId -> MovieScore -> DbCall MovieScoreRowId
     addMovieScore mid (MovieScore source score) = insert $ MovieScoreRow mid source score
