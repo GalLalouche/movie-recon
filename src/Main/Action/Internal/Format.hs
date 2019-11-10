@@ -1,4 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE PatternSynonyms       #-}
 {-# LANGUAGE QuasiQuotes           #-}
 
@@ -16,10 +15,8 @@ import           Data.Text                     (Text, unlines)
 import           Data.Vector                   (Vector)
 import           Text.InterpolatedString.Perl6 (qq)
 
-import           MovieDB.Types                 (Movie(Movie), pattern MovieId, Participation(Participation), ParticipationType(Actor), Person)
-import qualified MovieDB.Types                 as Types
-import           OMDB                          (MovieScore(MovieScore), MovieScores, Source(IMDB, Metacritic, RottenTomatoes))
-import qualified OMDB
+import           MovieDB.Types                 (Movie(Movie), pattern MovieId, Participation(Participation), ParticipationType(Actor), Person(_name))
+import           OMDB                          (MovieScore(MovieScore), MovieScores(_scores), Source(IMDB, Metacritic, RottenTomatoes))
 
 import           Common.Foldables              (intercalate)
 
@@ -28,8 +25,8 @@ tab = "\t"
 
 mkStringMovie :: Movie -> Maybe MovieScores -> Text
 mkStringMovie (Movie (MovieId id) name date) ms = let
-    scoreString = maybe "No score" (toString . OMDB._scores) ms
-    toString ms = [qq|({intercalate ", " $ Set.map aux ms})|]
+    scoreString = maybe "No score" (toString . _scores) ms
+    toString ms = let commaSeparatedScores = intercalate ", " $ Set.map aux ms in [qq|({commaSeparatedScores})|]
     aux (MovieScore source score) = let
         shortSource = case source of
           IMDB           -> "IMDB"
@@ -53,5 +50,4 @@ mkFullMovieInfoString (FullMovieInfo m ps ms) = let
       maybeRole = case pt of
         Actor -> ""
         e     -> [qq| ($e)|]
-      name = Types._name (p :: Person)
-    in [qq|$tab$name$maybeRole|]
+    in [qq|$tab{_name p}$maybeRole|]

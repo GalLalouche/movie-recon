@@ -1,6 +1,5 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module Main.Action.Internal.Database(
   filterReleasedAndSave,
@@ -34,8 +33,8 @@ import qualified MovieDB.Database.Movie          as Movie
 import qualified MovieDB.Database.MovieScore     as MovieScore
 import qualified MovieDB.Database.Participation  as Participation
 import qualified MovieDB.Database.Person         as Person
-import           MovieDB.Types                   (FilterReason(Ignored, LowScores, Seen), FilteredMovie(FilteredMovie), Movie, MovieId, Participation(Participation), mkMovieId)
-import qualified MovieDB.Types                   as Types
+import           MovieDB.Types                   (FilterReason(Ignored, LowScores, Seen), FilteredMovie(FilteredMovie), Movie, MovieId, Participation(Participation, participationType, person), mkMovieId)
+import qualified MovieDB.Types                   as Types (isReleased)
 import           OMDB                            (MovieScore(_score), MovieScores(_scores))
 
 import           Common.Foldables                (average, notNull)
@@ -92,7 +91,7 @@ printUnseenMovies verbose = do
       return sortedByScore
     getFollowedParticipations :: Movie -> DbCall (Vector Participation)
     getFollowedParticipations = Participation.getParticipationsForMovie >=>
-        traverseFilter (uncurry FollowedPerson.isFollowed . (Types.participationType &&& Types.person))
+        traverseFilter (uncurry FollowedPerson.isFollowed . (participationType &&& person))
     getExtraInfo :: Movie -> DbCall (Vector Participation, Maybe MovieScores)
     getExtraInfo = liftUncurry (,) . (getFollowedParticipations &&& runMaybeT . MovieScore.movieScores)
     toFullMovieInfo (m, (p, ms)) = F.FullMovieInfo m p ms
